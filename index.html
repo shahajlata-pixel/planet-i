@@ -109,10 +109,16 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Make Firebase available to React
+        // Make Firebase available to React globally
         window.db = db;
         window.auth = auth;
-        window.authFunctions = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail };
+        window.authFunctions = { 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            signOut, 
+            onAuthStateChanged, 
+            sendPasswordResetEmail
+        };
         window.dbFunctions = { collection, addDoc, getDocs, query, orderBy, where };
     </script>
 
@@ -152,11 +158,6 @@
             { id: 'c2', name: 'E-303 (Academic)', category: 'Classroom', x: 55, y: 30 },
             { id: 'c3', name: 'D-301 (Academic)', category: 'Classroom', x: 45, y: 30 },
             { id: 'st1', name: 'Studio', category: 'Studio', x: 50, y: 20 },
-        ];
-
-        const SNACK_OPTIONS = [
-            { id: 'admin_caf', name: 'Admin Cafeteria Combo', price: 150 },
-            { id: 'marvi', name: 'Marvi Enterprise Snacks', price: 80 },
         ];
 
         const TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
