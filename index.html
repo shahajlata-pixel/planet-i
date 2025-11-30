@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planet-I Booking System</title>
     
-    <!-- Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -95,10 +92,11 @@
     <script type="module">
         // --- FIREBASE IMPORTS ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        // Added GoogleAuthProvider and signInWithPopup
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // --- FIREBASE CONFIGURATION (PASTE YOUR KEYS HERE) ---
+        // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyAO_u-iyZjPpJ2zKEMUluZpokNvwN8gcwM",
             authDomain: "planet-i-booking.firebaseapp.com",
@@ -115,7 +113,12 @@
         // Make Firebase available to React
         window.db = db;
         window.auth = auth;
-        window.authFunctions = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail };
+        window.authFunctions = { 
+            GoogleAuthProvider, 
+            signInWithPopup, 
+            signOut, 
+            onAuthStateChanged 
+        };
         window.dbFunctions = { collection, addDoc, getDocs, query, orderBy, where };
     </script>
 
@@ -202,39 +205,22 @@
         };
 
         const AuthScreen = ({ onLogin }) => {
-            const [isLogin, setIsLogin] = useState(true);
-            const [email, setEmail] = useState('');
-            const [password, setPassword] = useState('');
             const [error, setError] = useState('');
 
-            const handleSubmit = async (e) => {
-                e.preventDefault();
-                setError('');
-                
-                if (!email.endsWith(REQUIRED_DOMAIN)) {
-                    setError(`Restricted Domain. Only ${REQUIRED_DOMAIN} allowed.`);
-                    return;
-                }
-
+            const handleGoogleLogin = async () => {
                 try {
-                    if (isLogin) {
-                        const userCredential = await window.authFunctions.signInWithEmailAndPassword(window.auth, email, password);
-                        onLogin(userCredential.user);
-                    } else {
-                        const userCredential = await window.authFunctions.createUserWithEmailAndPassword(window.auth, email, password);
-                        onLogin(userCredential.user);
+                    const provider = new window.authFunctions.GoogleAuthProvider();
+                    const result = await window.authFunctions.signInWithPopup(window.auth, provider);
+                    const user = result.user;
+                    // Optional: Domain check still useful for UI feedback
+                    if (!user.email.endsWith(REQUIRED_DOMAIN) && !user.email.endsWith('gmail.com')) {
+                       // Note: We allow sign-in technically, but show error
+                       setError(`Warning: Domain not ${REQUIRED_DOMAIN}`);
                     }
+                    // onLogin will be triggered by onAuthStateChanged in Root
                 } catch (err) {
-                    setError(err.message.replace("Firebase:", "").trim());
+                    setError("Login Failed: " + err.message);
                 }
-            };
-
-            const handleReset = async () => {
-                if (!email) return alert("Please enter email first");
-                try {
-                    await window.authFunctions.sendPasswordResetEmail(window.auth, email);
-                    alert("Reset link sent!");
-                } catch(err) { alert(err.message); }
             };
 
             return (
@@ -243,26 +229,10 @@
                         <h1 className="text-4xl md:text-6xl text-yellow-400 mb-2 pixel-text-shadow retro-font">PLANET-I</h1>
                         <p className="text-xl text-blue-300 tracking-widest uppercase retro-font">Booking System</p>
                     </div>
-                    <div className="z-10 bg-[#1e293b] p-8 border-4 border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] max-w-md w-full">
-                        <div className="flex justify-between mb-6">
-                            <button onClick={()=>setIsLogin(true)} className={`retro-font ${isLogin ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-400'}`}>LOGIN</button>
-                            <button onClick={()=>setIsLogin(false)} className={`retro-font ${!isLogin ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-400'}`}>SIGN UP</button>
-                        </div>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <input type="email" placeholder="Institute Email" className="auth-input" value={email} onChange={e=>setEmail(e.target.value)} required />
-                            <input type="password" placeholder="Password" className="auth-input" value={password} onChange={e=>setPassword(e.target.value)} required />
-                            
-                            {!isLogin && (
-                                <div className="flex items-center gap-2 bg-gray-900 p-2 border border-gray-600">
-                                    <input type="checkbox" required />
-                                    <span className="text-xs text-gray-400">I am not a robot (Mock Captcha)</span>
-                                </div>
-                            )}
-
-                            {error && <p className="text-red-500 text-xs font-bold">{error}</p>}
-                            <RetroButton className="w-full">{isLogin ? 'ENTER SYSTEM' : 'REGISTER'}</RetroButton>
-                        </form>
-                        {isLogin && <button onClick={handleReset} className="text-xs text-gray-400 mt-4 hover:text-white block mx-auto">Forgot Password?</button>}
+                    <div className="z-10 bg-[#1e293b] p-8 border-4 border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] max-w-md w-full text-center">
+                        <p className="mb-6 text-gray-300 retro-font text-sm">ACCESS RESTRICTED. IDENTIFY YOURSELF.</p>
+                        <RetroButton onClick={handleGoogleLogin} className="w-full">SIGN IN WITH GOOGLE</RetroButton>
+                        {error && <p className="text-red-500 text-xs font-bold mt-4">{error}</p>}
                     </div>
                 </div>
             );
@@ -275,10 +245,9 @@
             const [purpose, setPurpose] = useState('');
             const maxDays = venue.category === 'Sports' ? 2 : venue.category === 'Auditorium' ? 7 : 30;
             const today = new Date().toISOString().split('T')[0];
-            
-            // Calc max date
-            const d = new Date(); d.setDate(d.getDate() + maxDays);
-            const maxDateStr = d.toISOString().split('T')[0];
+            const maxDateObj = new Date();
+            maxDateObj.setDate(maxDateObj.getDate() + maxDays);
+            const maxDateStr = maxDateObj.toISOString().split('T')[0];
 
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 font-mono backdrop-blur-sm">
@@ -302,9 +271,6 @@
                                     <button onClick={() => setOpenChallenge(!openChallenge)} className={`w-12 h-6 border-2 border-white flex items-center px-1 transition-colors ${openChallenge ? 'bg-green-500 justify-end' : 'bg-red-500 justify-start'}`}><div className="w-4 h-4 bg-white border border-black"></div></button>
                                 </div>
                             )}
-                            {(venue.category === 'Classroom' || venue.category === 'Auditorium' || venue.category === 'Studio') && (
-                                <div><label className="block text-green-400 mb-2 uppercase text-xs retro-font flex items-center gap-2"><Coffee /> Add Snacks</label><div className="space-y-2">{SNACK_OPTIONS.map(snack => (<div key={snack.id} className="flex items-center gap-3 bg-black/30 p-2 border border-white/20 hover:bg-white/10 cursor-pointer" onClick={() => handleSnack(snack.id)}><div className={`w-4 h-4 border-2 border-white ${snacks.includes(snack.id) ? 'bg-green-500' : 'bg-black'}`}></div><span className="text-sm">{snack.name} (+₹{snack.price})</span></div>))}</div></div>
-                            )}
                             <RetroButton onClick={() => onConfirm({ venue, date, time, openChallenge, purpose })} className="w-full mt-4" variant="success">CONFIRM BOOKING</RetroButton>
                         </div>
                     </div>
@@ -324,12 +290,17 @@
 
             // --- INIT ---
             useEffect(() => {
-                // Auth Listener - WAIT FOR WINDOW.AUTH TO BE READY
                 const checkAuth = setInterval(() => {
                     if (window.auth && window.authFunctions) {
                         clearInterval(checkAuth);
                         const unsubscribe = window.authFunctions.onAuthStateChanged(window.auth, (u) => {
-                            setUser(u ? { name: u.email.split('@')[0], email: u.email, role: 'Student' } : null);
+                            if (u) {
+                                // Use Google Display Name or Fallback
+                                const name = u.displayName || u.email.split('@')[0] || "Student";
+                                setUser({ name: name, email: u.email, role: 'Student' });
+                            } else {
+                                setUser(null);
+                            }
                         });
                         return () => unsubscribe();
                     }
@@ -368,16 +339,20 @@
                     } catch (e) { console.error("Firestore Error", e); }
                 };
                 loadBookings();
-            }, [user, view]); // Reload when view changes to refresh data
+            }, [user, view]);
 
             const handleBookingConfirm = async (data) => {
                 if(!data.date || !data.time) return alert("Select Date/Time");
                 
+                // Safe User Details for Firestore
+                const safeUserName = (user && user.name) ? user.name : "Student";
+                const safeUserEmail = (user && user.email) ? user.email : "Unknown";
+
                 const newBooking = { 
                     venueName: data.venue.name, 
                     venueId: data.venue.id, 
-                    user: user.name, 
-                    email: user.email,
+                    user: safeUserName, 
+                    email: safeUserEmail,
                     date: data.date,
                     time: data.time,
                     purpose: data.purpose || "N/A",
@@ -388,9 +363,10 @@
                 try {
                     await window.dbFunctions.addDoc(window.dbFunctions.collection(window.db, "bookings"), newBooking);
                     alert("Booking Successful!");
-                    setView('bookings'); // Go to bookings view to see updates
+                    setView('bookings');
                 } catch(e) { 
                     alert("Booking Failed: " + e.message);
+                    console.error(e);
                 }
                 
                 setSelectedVenue(null);
@@ -452,6 +428,7 @@
                             {view === 'heatmap' && (
                                 <div className="w-full h-full bg-[#1e293b]/95 border-4 border-white p-8 overflow-y-auto backdrop-blur-sm relative flex flex-col rounded-xl shadow-2xl">
                                     <div className="flex justify-between items-center mb-8 border-b-4 border-white pb-4"><h2 className="text-3xl text-red-400 retro-font">CAMPUS HEATMAP</h2><button onClick={() => setView('map')} className="text-gray-400 hover:text-white p-2 border-2 border-transparent hover:border-white transition-all"><ArrowLeft className="w-6 h-6" /></button></div>
+                                    <div className="bg-black border-2 border-purple-500 p-6 mb-8 text-sm font-mono text-purple-300 leading-relaxed shadow-[0_0_15px_rgba(168,85,247,0.3)]">{aiInsight}</div>
                                     <div className="flex-1 w-full overflow-x-auto"><div className="min-w-[600px]"><div className="flex mb-4 ml-48">{TIME_SLOTS.map(t => (<div key={t} className="flex-1 text-center text-xs text-gray-400 -rotate-45 origin-bottom">{t}</div>))}</div><div className="space-y-3">{VENUES.map(v => (<div key={v.id} className="flex items-center gap-4"><span className="w-48 text-xs uppercase font-mono text-right truncate pr-4 text-gray-300">{v.name}</span><div className="flex-1 h-10 bg-black border border-white/20 flex relative group">{TIME_SLOTS.map((slot) => {const isBooked = bookings.some(b => b.venueId === v.id && b.time.startsWith(slot));return (<div key={slot} className={`flex-1 border-r border-white/10 transition-all hover:opacity-80 relative ${isBooked ? 'bg-red-500' : 'bg-transparent hover:bg-white/10'}`}><div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-1 text-[10px] bg-black border border-white px-1 pointer-events-none z-20 whitespace-nowrap text-white">{slot}</div></div>);})}</div></div>))}</div></div></div>
                                 </div>
                             )}
