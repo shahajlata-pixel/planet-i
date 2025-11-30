@@ -80,7 +80,7 @@
         .retro-table .row-id { color: #94a3b8; font-family: monospace; }
         
         /* Auth Form Styles */
-        .auth-input { width: 100%; background: #000; border: 2px solid #fff; padding: 10px; color: #fff; font-family: monospace; margin-bottom: 10px; }
+        .auth-input { width: 100%; background: #000; border: 2px solid #fff; padding: 10px; color: #fff; font-family: 'VT323', monospace; font-size: 1.2rem; margin-bottom: 10px; }
         .auth-input:focus { border-color: #fbbf24; outline: none; }
     </style>
 </head>
@@ -92,8 +92,7 @@
     <script type="module">
         // --- FIREBASE IMPORTS ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        // Added GoogleAuthProvider and signInWithPopup
-        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // --- FIREBASE CONFIGURATION ---
@@ -113,12 +112,7 @@
         // Make Firebase available to React
         window.db = db;
         window.auth = auth;
-        window.authFunctions = { 
-            GoogleAuthProvider, 
-            signInWithPopup, 
-            signOut, 
-            onAuthStateChanged 
-        };
+        window.authFunctions = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail };
         window.dbFunctions = { collection, addDoc, getDocs, query, orderBy, where };
     </script>
 
@@ -158,6 +152,11 @@
             { id: 'c2', name: 'E-303 (Academic)', category: 'Classroom', x: 55, y: 30 },
             { id: 'c3', name: 'D-301 (Academic)', category: 'Classroom', x: 45, y: 30 },
             { id: 'st1', name: 'Studio', category: 'Studio', x: 50, y: 20 },
+        ];
+
+        const SNACK_OPTIONS = [
+            { id: 'admin_caf', name: 'Admin Cafeteria Combo', price: 150 },
+            { id: 'marvi', name: 'Marvi Enterprise Snacks', price: 80 },
         ];
 
         const TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
@@ -205,22 +204,50 @@
         };
 
         const AuthScreen = ({ onLogin }) => {
+            const [isLogin, setIsLogin] = useState(true);
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
             const [error, setError] = useState('');
 
-            const handleGoogleLogin = async () => {
-                try {
-                    const provider = new window.authFunctions.GoogleAuthProvider();
-                    const result = await window.authFunctions.signInWithPopup(window.auth, provider);
-                    const user = result.user;
-                    // Optional: Domain check still useful for UI feedback
-                    if (!user.email.endsWith(REQUIRED_DOMAIN) && !user.email.endsWith('gmail.com')) {
-                       // Note: We allow sign-in technically, but show error
-                       setError(`Warning: Domain not ${REQUIRED_DOMAIN}`);
-                    }
-                    // onLogin will be triggered by onAuthStateChanged in Root
-                } catch (err) {
-                    setError("Login Failed: " + err.message);
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError('');
+                
+                // Strict Domain Validation for Sign Up
+                if (!isLogin && !email.endsWith(REQUIRED_DOMAIN)) {
+                    setError(`RESTRICTED ACCESS: Only ${REQUIRED_DOMAIN} emails are allowed.`);
+                    return;
                 }
+
+                try {
+                    let userCred;
+                    if (isLogin) {
+                        userCred = await window.authFunctions.signInWithEmailAndPassword(window.auth, email, password);
+                    } else {
+                        userCred = await window.authFunctions.createUserWithEmailAndPassword(window.auth, email, password);
+                    }
+                    // Successful login/signup will trigger onAuthStateChanged
+                } catch (err) {
+                    console.error(err);
+                    // Handle common Firebase errors
+                    if (err.code === 'auth/operation-not-allowed') {
+                        setError("ERROR: Email/Password login is disabled in Firebase Console.");
+                    } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+                        setError("ACCESS DENIED: Invalid credentials.");
+                    } else if (err.code === 'auth/email-already-in-use') {
+                        setError("ERROR: Email already registered.");
+                    } else {
+                        setError("SYSTEM ERROR: " + err.message);
+                    }
+                }
+            };
+
+            const handleReset = async () => {
+                if (!email) return setError("ENTER EMAIL TO RESET PASSWORD");
+                try {
+                    await window.authFunctions.sendPasswordResetEmail(window.auth, email);
+                    alert("RESET LINK SENT TO COMM CHANNEL.");
+                } catch(err) { setError(err.message); }
             };
 
             return (
@@ -229,10 +256,33 @@
                         <h1 className="text-4xl md:text-6xl text-yellow-400 mb-2 pixel-text-shadow retro-font">PLANET-I</h1>
                         <p className="text-xl text-blue-300 tracking-widest uppercase retro-font">Booking System</p>
                     </div>
-                    <div className="z-10 bg-[#1e293b] p-8 border-4 border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] max-w-md w-full text-center">
-                        <p className="mb-6 text-gray-300 retro-font text-sm">ACCESS RESTRICTED. IDENTIFY YOURSELF.</p>
-                        <RetroButton onClick={handleGoogleLogin} className="w-full">SIGN IN WITH GOOGLE</RetroButton>
-                        {error && <p className="text-red-500 text-xs font-bold mt-4">{error}</p>}
+                    <div className="z-10 bg-[#1e293b] p-8 border-4 border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] max-w-md w-full">
+                        
+                        <div className="flex justify-between mb-6 border-b-2 border-gray-600 pb-2">
+                            <button onClick={()=>setIsLogin(true)} className={`retro-font text-sm ${isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}>LOGIN</button>
+                            <button onClick={()=>setIsLogin(false)} className={`retro-font text-sm ${!isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}>SIGN UP</button>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-xs text-gray-400 mb-1 retro-font">INSTITUTE ID</label>
+                                <input type="email" className="auth-input" value={email} onChange={e=>setEmail(e.target.value)} required />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-gray-400 mb-1 retro-font">PASSWORD</label>
+                                <input type="password" className="auth-input" value={password} onChange={e=>setPassword(e.target.value)} required />
+                            </div>
+                            
+                            {error && <p className="text-red-500 text-xs font-bold blink">{error}</p>}
+                            
+                            <RetroButton className="w-full mt-2">{isLogin ? 'AUTHENTICATE' : 'REGISTER ID'}</RetroButton>
+                        </form>
+                        
+                        {isLogin && (
+                            <button onClick={handleReset} className="text-xs text-blue-400 mt-4 hover:text-white block mx-auto retro-font underline decoration-dotted">
+                                FORGOT PASSWORD?
+                            </button>
+                        )}
                     </div>
                 </div>
             );
@@ -295,8 +345,7 @@
                         clearInterval(checkAuth);
                         const unsubscribe = window.authFunctions.onAuthStateChanged(window.auth, (u) => {
                             if (u) {
-                                // Use Google Display Name or Fallback
-                                const name = u.displayName || u.email.split('@')[0] || "Student";
+                                const name = u.email.split('@')[0]; // Fallback to email name since Email/Pass doesn't ask for name on signup
                                 setUser({ name: name, email: u.email, role: 'Student' });
                             } else {
                                 setUser(null);
