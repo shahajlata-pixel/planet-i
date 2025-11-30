@@ -32,7 +32,7 @@
             image-rendering: pixelated;
             margin: 0;
             color: white;
-            overflow: hidden; /* Main scroll handled by flex containers */
+            /* Removed overflow:hidden to allow natural scrolling */
         }
 
         .custom-cursor { cursor: crosshair; }
@@ -71,67 +71,62 @@
         ::-webkit-scrollbar { width: 10px; background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #3b82f6; border: 2px solid #0f172a; }
 
-        /* FIXED TABLE STYLES */
+        /* Excel Styles */
         .retro-table-container { 
             border: 4px solid white; 
             box-shadow: 4px 4px 0px #000; 
             background: #0f172a; 
-            overflow: auto; 
-            flex: 1; 
-            min-height: 0; /* Critical for flex scroll */
+            overflow-x: auto; 
+            width: 100%;
         }
-        
         .retro-table { 
             width: 100%; 
-            border-collapse: separate; /* Changed from collapse for sticky fix */
+            border-collapse: separate; 
             border-spacing: 0;
             font-family: 'VT323', monospace; 
-            font-size: 1.2rem; 
+            font-size: 1.1rem; 
             color: #4ade80; 
             white-space: nowrap; 
         }
-        
         .retro-table th { 
             background: #1e293b; 
             color: #fbbf24; 
             text-transform: uppercase; 
-            padding: 12px; 
+            padding: 10px; 
             border-bottom: 2px solid #334155; 
             border-right: 1px solid #334155;
             text-align: left; 
             font-family: 'Press Start 2P', cursive; 
-            font-size: 0.7rem; 
+            font-size: 0.6rem; 
             letter-spacing: 1px; 
-            position: sticky; 
-            top: 0; 
-            z-index: 20; 
         }
-        
         .retro-table td { 
-            padding: 10px; 
+            padding: 8px 10px; 
             border-bottom: 1px solid #334155; 
             border-right: 1px solid #334155;
-            background: #0f172a; /* Ensure rows obscure behind header */
+            background: #0f172a;
         }
-        
-        .retro-table tr:hover td { 
-            background: #1e293b; 
-            color: white; 
-            cursor: crosshair; 
-        }
-        
+        .retro-table tr:hover td { background: #1e293b; color: white; cursor: crosshair; }
         .retro-table .row-id { color: #94a3b8; font-family: monospace; }
         
         /* Auth Form Styles */
         .auth-input { width: 100%; background: #000; border: 2px solid #fff; padding: 10px; color: #fff; font-family: 'VT323', monospace; font-size: 1.2rem; margin-bottom: 10px; }
         .auth-input:focus { border-color: #fbbf24; outline: none; }
         
-        .filter-select { background: #000; color: white; border: 2px solid #334155; padding: 8px; font-family: 'VT323', monospace; font-size: 1rem; outline: none; }
-        .filter-select:focus { border-color: #fbbf24; }
-        .filter-input { width: 100%; background: #000; border: 2px solid #334155; padding: 8px; color: white; font-family: 'VT323', monospace; font-size: 1.2rem; }
+        .table-filter-input {
+            width: 100%;
+            background: #050914;
+            border: 1px solid #334155;
+            color: white;
+            padding: 4px;
+            font-family: 'VT323', monospace;
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
+        .table-filter-input:focus { border-color: #fbbf24; outline: none; }
         
-        .sort-header { cursor: pointer; display: flex; align-items: center; }
-        .sort-icon { margin-left: 5px; color: #fbbf24; }
+        .sort-header { cursor: pointer; display: flex; flex-direction: column; }
+        .sort-label { display: flex; align-items: center; gap: 4px; }
     </style>
 </head>
 <body>
@@ -159,7 +154,6 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Make Firebase available to React globally
         window.db = db;
         window.auth = auth;
         window.authFunctions = { 
@@ -175,7 +169,6 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
         
-        // --- CONSTANTS ---
         const ADMIN_EMAIL = "i24lata@iimidr.ac.in";
         const REQUIRED_DOMAIN = "@iimidr.ac.in";
 
@@ -191,6 +184,8 @@
         const Sparkles = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>;
         const LogOut = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>;
         const ChevronDown = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"></polyline></svg>;
+        const Coffee = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>;
+        const Database = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>;
         const Search = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
         const Filter = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>;
 
@@ -385,11 +380,9 @@
             const [expandedCat, setExpandedCat] = useState(null);
             
             // Database View State
-            const [searchTerm, setSearchTerm] = useState("");
+            const [filters, setFilters] = useState({ venue: '', date: '', time: '', user: '', email: '', purpose: '', challenge: '' });
             const [sortOrder, setSortOrder] = useState("asc");
-            const [sortColumn, setSortColumn] = useState("date"); // Default sort column
-            const [venueFilter, setVenueFilter] = useState("All"); 
-            const [challengeFilter, setChallengeFilter] = useState(false); 
+            const [sortColumn, setSortColumn] = useState("date");
 
             // --- INIT ---
             useEffect(() => {
@@ -427,44 +420,24 @@
             // --- FIRESTORE REAL-TIME LISTENER ---
             useEffect(() => {
                 if (!user || !window.dbFunctions) return;
-                
-                // Use onSnapshot for real-time updates
                 const q = window.dbFunctions.query(window.dbFunctions.collection(window.db, "bookings"), window.dbFunctions.orderBy("timestamp", "desc"));
-                
                 const unsubscribe = window.dbFunctions.onSnapshot(q, (snapshot) => {
                     const loaded = [];
                     snapshot.forEach((doc) => loaded.push({ id: doc.id, ...doc.data() }));
                     setBookings(loaded);
-                }, (error) => {
-                    console.error("Firestore Error", error);
-                });
-
+                }, (error) => { console.error("Firestore Error", error); });
                 return () => unsubscribe();
-            }, [user]); // Remove 'view' dependency to keep listener active
+            }, [user]);
 
             const handleBookingConfirm = async (data) => {
                 if(!data.date || !data.time) return alert("Select Date/Time");
-                
-                // Double Booking Check
-                const isConflict = bookings.some(b => 
-                    b.venueId === data.venue.id && 
-                    b.date === data.date && 
-                    b.time === data.time && 
-                    b.id !== data.id 
-                );
-
+                const isConflict = bookings.some(b => b.venueId === data.venue.id && b.date === data.date && b.time === data.time && b.id !== data.id);
                 if (isConflict) return alert("Slot already booked! Please choose another time.");
 
                 const payload = { 
-                    venueName: data.venue.name, 
-                    venueId: data.venue.id, 
-                    user: user.name, 
-                    email: user.email,
-                    date: data.date,
-                    time: data.time,
-                    purpose: data.purpose || "N/A",
-                    openChallenge: data.openChallenge || false,
-                    timestamp: new Date()
+                    venueName: data.venue.name, venueId: data.venue.id, user: user.name, email: user.email,
+                    date: data.date, time: data.time, purpose: data.purpose || "N/A",
+                    openChallenge: data.openChallenge || false, timestamp: new Date()
                 };
 
                 try {
@@ -477,24 +450,18 @@
                     }
                     setView('bookings');
                 } catch(e) { alert("Action Failed: " + e.message); }
-                
-                setSelectedVenue(null);
-                setEditingBooking(null);
+                setSelectedVenue(null); setEditingBooking(null);
             };
 
             const handleCancel = async (id) => {
                 if(confirm("Cancel this booking?")) {
-                    try {
-                        await window.dbFunctions.deleteDoc(window.dbFunctions.doc(window.db, "bookings", id));
-                        // No need to setBookings manually, onSnapshot will handle it
-                    } catch(e) { alert("Failed to cancel."); }
+                    try { await window.dbFunctions.deleteDoc(window.dbFunctions.doc(window.db, "bookings", id)); } catch(e) { alert("Failed to cancel."); }
                 }
             };
 
             const handleEdit = (booking) => {
                 const venueObj = VENUES.find(v => v.id === booking.venueId) || { name: booking.venueName, category: 'Unknown' };
-                setEditingBooking(booking);
-                setSelectedVenue(venueObj);
+                setEditingBooking(booking); setSelectedVenue(venueObj);
             };
 
             const toggleCategory = (cat) => setExpandedCat(expandedCat === cat ? null : cat);
@@ -505,58 +472,37 @@
             };
             
             const handleSort = (column) => {
-                if (sortColumn === column) {
-                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                } else {
-                    setSortColumn(column);
-                    setSortOrder('asc');
-                }
+                if (sortColumn === column) setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                else { setSortColumn(column); setSortOrder('asc'); }
+            };
+            
+            const handleFilterChange = (key, value) => {
+                setFilters(prev => ({...prev, [key]: value}));
             };
 
-            // --- FILTER & SORT LOGIC FOR DATABASE VIEW ---
             const filteredBookings = bookings.filter(b => {
-                const searchLower = searchTerm.toLowerCase();
-                // 1. Search Filter (Check against all key text fields)
-                const matchesSearch = (
-                    b.venueName.toLowerCase().includes(searchLower) ||
-                    b.user.toLowerCase().includes(searchLower) ||
-                    b.email.toLowerCase().includes(searchLower) ||
-                    (b.purpose && b.purpose.toLowerCase().includes(searchLower))
+                return (
+                    b.venueName.toLowerCase().includes(filters.venue.toLowerCase()) &&
+                    b.date.includes(filters.date) &&
+                    b.time.toLowerCase().includes(filters.time.toLowerCase()) &&
+                    b.user.toLowerCase().includes(filters.user.toLowerCase()) &&
+                    b.email.toLowerCase().includes(filters.email.toLowerCase()) &&
+                    (b.purpose || '').toLowerCase().includes(filters.purpose.toLowerCase()) &&
+                    (filters.challenge === '' || (filters.challenge === 'yes' ? b.openChallenge : !b.openChallenge))
                 );
-                // 2. Venue Filter (Dropdown)
-                const matchesVenue = venueFilter === "All" || b.venueName === venueFilter;
-                // 3. Challenge Filter (Checkbox)
-                const matchesChallenge = !challengeFilter || b.openChallenge;
-
-                return matchesSearch && matchesVenue && matchesChallenge;
             }).sort((a, b) => {
                 const isAsc = sortOrder === 'asc';
-                let compareA, compareB;
-
-                switch (sortColumn) {
-                    case 'venue': compareA = a.venueName; compareB = b.venueName; break;
-                    case 'user': compareA = a.user; compareB = b.user; break;
-                    case 'email': compareA = a.email; compareB = b.email; break;
-                    case 'purpose': compareA = a.purpose; compareB = b.purpose; break;
-                    case 'challenge': compareA = a.openChallenge; compareB = b.openChallenge; break;
-                    case 'time': compareA = a.time; compareB = b.time; break;
-                    case 'bookedAt': 
-                        compareA = (a.timestamp && a.timestamp.toDate) ? a.timestamp.toDate().getTime() : 0;
-                        compareB = (b.timestamp && b.timestamp.toDate) ? b.timestamp.toDate().getTime() : 0;
-                        break;
-                    case 'date':
-                    default: 
-                        const dateA = new Date(a.date);
-                        const dateB = new Date(b.date);
-                        return isAsc ? dateA - dateB : dateB - dateA;
-                }
+                let valA = a[sortColumn === 'venue' ? 'venueName' : sortColumn] || '';
+                let valB = b[sortColumn === 'venue' ? 'venueName' : sortColumn] || '';
                 
-                if (typeof compareA === 'string' && typeof compareB === 'string') {
-                    if (isAsc) return compareA.localeCompare(compareB);
-                    return compareB.localeCompare(compareA);
+                if (sortColumn === 'bookedAt') {
+                     valA = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : 0;
+                     valB = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : 0;
                 }
-                if (isAsc) return compareA > compareB ? 1 : -1;
-                return compareB > compareA ? 1 : -1;
+
+                if (valA < valB) return isAsc ? -1 : 1;
+                if (valA > valB) return isAsc ? 1 : -1;
+                return 0;
             });
 
             if (!user) return <AuthScreen onLogin={setUser} />;
@@ -569,7 +515,6 @@
                     </header>
                     
                     <div className="flex-1 flex flex-col md:flex-row relative z-10 min-h-[calc(100vh-80px)]"> 
-                        {/* LEFT ASIDE MENU */}
                         <aside className="w-full md:w-72 p-6 flex flex-col gap-6 border-r border-white/10 bg-[#0f172a]/80 backdrop-blur-md sticky top-[80px] h-[calc(100vh-80px)] overflow-y-auto">
                             <div className="bg-black/40 p-4 rounded-xl border border-white/10 retro-font">
                                 <div className="flex items-center justify-between mb-2"><span className="text-xs text-gray-400">Rau-Pithampur</span>{weather.desc.includes('Rain') ? <CloudRain className="w-5 h-5 text-blue-400" /> : <Sun className="w-5 h-5 text-yellow-400" />}</div>
@@ -592,7 +537,6 @@
                             </nav>
                         </aside>
                         
-                        {/* MAIN CONTENT VIEWS */}
                         <main className="flex-1 p-6 relative overflow-y-auto h-[calc(100vh-80px)]">
                             {view === 'map' && (<PixelEarth venues={VENUES} bookings={bookings} onVenueClick={setSelectedVenue} />)}
                             
@@ -607,36 +551,19 @@
                                 <div className="w-full h-full bg-[#1e293b]/95 border-4 border-white p-8 overflow-y-auto backdrop-blur-sm relative flex flex-col rounded-xl shadow-2xl">
                                     <div className="flex justify-between items-center mb-8 border-b-4 border-white pb-4"><h2 className="text-3xl text-yellow-400 retro-font">BOOKINGS DATABASE</h2><button onClick={() => setView('map')} className="text-gray-400 hover:text-white p-2 border-2 border-transparent hover:border-white transition-all"><ArrowLeft className="w-8 h-8" /></button></div>
                                     
-                                    {/* --- DATABASE FILTERS --- */}
-                                    <div className="flex flex-wrap gap-4 mb-4 items-center bg-black/40 p-4 rounded border border-white/20">
-                                        <div className="relative flex-1 min-w-[200px]"><Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" /><input type="text" placeholder="Search (Name, Email, Purpose)..." className="filter-input pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
-                                        
-                                        <select value={venueFilter} onChange={(e) => setVenueFilter(e.target.value)} className="filter-select">
-                                            <option value="All">All Venues</option>
-                                            {VENUES.map(v => <option key={v.id} value={v.name}>{v.name}</option>)}
-                                        </select>
-
-                                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                                            <input type="checkbox" checked={challengeFilter} onChange={(e) => setChallengeFilter(e.target.checked)} className="accent-yellow-400 w-5 h-5" />
-                                            <span className="text-sm retro-font text-yellow-400">OPEN CHALLENGE ONLY</span>
-                                        </label>
-
-                                        <button onClick={() => handleSort('date')} className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white text-sm"><Filter className="w-4 h-4" /> Sort Date {sortColumn === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}</button>
-                                    </div>
-
                                     <div className="retro-table-container flex-1">
                                         <table className="retro-table">
                                             <thead>
                                                 <tr>
                                                     <th>#</th>
-                                                    <th onClick={() => handleSort('venue')} className="sort-header">VENUE {sortColumn === 'venue' && <span className="sort-icon">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</th>
-                                                    <th onClick={() => handleSort('date')} className="sort-header">DATE {sortColumn === 'date' && <span className="sort-icon">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</th>
-                                                    <th onClick={() => handleSort('time')} className="sort-header">TIME {sortColumn === 'time' && <span className="sort-icon">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</th>
-                                                    <th onClick={() => handleSort('user')} className="sort-header">USER {sortColumn === 'user' && <span className="sort-icon">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</th>
-                                                    <th onClick={() => handleSort('email')} className="sort-header">EMAIL {sortColumn === 'email' && <span className="sort-icon">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</th>
-                                                    <th onClick={() => handleSort('purpose')} className="sort-header">PURPOSE {sortColumn === 'purpose' && <span className="sort-icon">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</th>
-                                                    <th onClick={() => handleSort('challenge')} className="sort-header">CHALLENGE {sortColumn === 'challenge' && <span className="sort-icon">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</th>
-                                                    <th onClick={() => handleSort('bookedAt')} className="sort-header">BOOKED AT {sortColumn === 'bookedAt' && <span className="sort-icon">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</th>
+                                                    <th onClick={() => handleSort('venue')} className="sort-header"><div className="sort-label">VENUE <input type="text" placeholder="Filter..." className="table-filter-input" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('venue', e.target.value)} /></div></th>
+                                                    <th onClick={() => handleSort('date')} className="sort-header"><div className="sort-label">DATE <input type="text" placeholder="YYYY-MM-DD" className="table-filter-input" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('date', e.target.value)} /></div></th>
+                                                    <th onClick={() => handleSort('time')} className="sort-header"><div className="sort-label">TIME <input type="text" placeholder="Filter..." className="table-filter-input" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('time', e.target.value)} /></div></th>
+                                                    <th onClick={() => handleSort('user')} className="sort-header"><div className="sort-label">USER <input type="text" placeholder="Filter..." className="table-filter-input" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('user', e.target.value)} /></div></th>
+                                                    <th onClick={() => handleSort('email')} className="sort-header"><div className="sort-label">EMAIL <input type="text" placeholder="Filter..." className="table-filter-input" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('email', e.target.value)} /></div></th>
+                                                    <th onClick={() => handleSort('purpose')} className="sort-header"><div className="sort-label">PURPOSE <input type="text" placeholder="Filter..." className="table-filter-input" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('purpose', e.target.value)} /></div></th>
+                                                    <th onClick={() => handleSort('challenge')} className="sort-header"><div className="sort-label">CHALLENGE <select className="table-filter-input" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('challenge', e.target.value)}><option value="">All</option><option value="yes">Yes</option><option value="no">No</option></select></div></th>
+                                                    <th onClick={() => handleSort('bookedAt')} className="sort-header">BOOKED AT</th>
                                                 </tr>
                                             </thead>
                                             <tbody>{filteredBookings.map((b, i) => (<tr key={b.id}>
