@@ -73,7 +73,7 @@
 
         /* Excel Styles */
         .retro-table-container { border: 4px solid white; box-shadow: 4px 4px 0px #000; background: #0f172a; overflow-x: auto; }
-        .retro-table { width: 100%; border-collapse: collapse; font-family: 'VT323', monospace; font-size: 1.2rem; color: #4ade80; }
+        .retro-table { width: 100%; border-collapse: collapse; font-family: 'VT323', monospace; font-size: 1.2rem; color: #4ade80; white-space: nowrap; }
         .retro-table th { background: #1e293b; color: #fbbf24; text-transform: uppercase; padding: 12px; border: 2px solid #334155; text-align: left; font-family: 'Press Start 2P', cursive; font-size: 0.7rem; letter-spacing: 1px; }
         .retro-table td { padding: 10px; border: 2px solid #334155; }
         .retro-table tr:hover { background: #1e293b; color: white; cursor: crosshair; }
@@ -82,6 +82,8 @@
         /* Auth Form Styles */
         .auth-input { width: 100%; background: #000; border: 2px solid #fff; padding: 10px; color: #fff; font-family: 'VT323', monospace; font-size: 1.2rem; margin-bottom: 10px; }
         .auth-input:focus { border-color: #fbbf24; outline: none; }
+        
+        .filter-input { background: #000; border: 2px solid #334155; padding: 5px 10px; color: white; font-family: 'VT323', monospace; }
     </style>
 </head>
 <body>
@@ -93,7 +95,7 @@
         // --- FIREBASE IMPORTS ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, deleteDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
@@ -109,7 +111,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Make Firebase available to React globally
+        // Expose to React
         window.db = db;
         window.auth = auth;
         window.authFunctions = { 
@@ -119,7 +121,7 @@
             onAuthStateChanged, 
             sendPasswordResetEmail
         };
-        window.dbFunctions = { collection, addDoc, getDocs, query, orderBy, where, deleteDoc, doc };
+        window.dbFunctions = { collection, addDoc, getDocs, query, orderBy, where, deleteDoc, updateDoc, doc };
     </script>
 
     <script type="text/babel">
@@ -132,6 +134,7 @@
         // --- ICONS ---
         const MapPin = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>;
         const XIcon = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
+        const EditIcon = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
         const BarChart3 = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>;
         const Sun = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>;
         const CloudRain = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="16" y1="13" x2="16" y2="21"></line><line x1="8" y1="13" x2="8" y2="21"></line><line x1="12" y1="15" x2="12" y2="23"></line><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"></path></svg>;
@@ -200,7 +203,7 @@
         };
 
         const RetroButton = ({ children, onClick, className = "", variant = "primary" }) => {
-            const colors = { primary: 'bg-blue-600 hover:bg-blue-500', danger: 'bg-red-600 hover:bg-red-500', success: 'bg-green-600 hover:bg-green-500', neutral: 'bg-gray-600 hover:bg-gray-500' };
+            const colors = { primary: 'bg-blue-600 hover:bg-blue-500', danger: 'bg-red-600 hover:bg-red-500', success: 'bg-green-600 hover:bg-green-500', neutral: 'bg-gray-600 hover:bg-gray-500', ai: 'bg-purple-600 hover:bg-purple-500' };
             return <button onClick={onClick} className={`${colors[variant]} text-white font-bold py-2 px-4 border-b-4 border-r-4 border-black active:border-0 active:mt-1 active:ml-1 uppercase tracking-wider font-retro text-sm transition-transform ${className}`}>{children}</button>;
         };
 
@@ -286,40 +289,36 @@
             );
         };
 
-        const BookingModal = ({ venue, onClose, onConfirm }) => {
-            const [date, setDate] = useState('');
-            const [time, setTime] = useState('');
-            const [openChallenge, setOpenChallenge] = useState(false);
-            const [purpose, setPurpose] = useState('');
+        const BookingModal = ({ venue, bookingToEdit, onClose, onConfirm }) => {
+            const [date, setDate] = useState(bookingToEdit ? bookingToEdit.date : '');
+            const [time, setTime] = useState(bookingToEdit ? bookingToEdit.time : '');
+            const [openChallenge, setOpenChallenge] = useState(bookingToEdit ? bookingToEdit.openChallenge : false);
+            const [purpose, setPurpose] = useState(bookingToEdit ? bookingToEdit.purpose : '');
             const maxDays = venue.category === 'Sports' ? 2 : venue.category === 'Auditorium' ? 7 : 30;
             const today = new Date().toISOString().split('T')[0];
-            const maxDateObj = new Date();
-            maxDateObj.setDate(maxDateObj.getDate() + maxDays);
+            const maxDateObj = new Date(); maxDateObj.setDate(maxDateObj.getDate() + maxDays);
             const maxDateStr = maxDateObj.toISOString().split('T')[0];
 
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 font-mono backdrop-blur-sm">
                     <div className="bg-[#1e293b] border-4 border-white text-white w-full max-w-lg shadow-[10px_10px_0px_0px_#000] animate-in zoom-in duration-200">
                         <div className="bg-blue-700 p-4 border-b-4 border-white flex justify-between items-center">
-                            <h2 className="text-lg text-white flex items-center gap-2 uppercase retro-font"><MapPin /> {venue.name}</h2>
+                            <h2 className="text-lg text-white flex items-center gap-2 uppercase retro-font"><MapPin /> {bookingToEdit ? 'EDIT: ' : ''}{venue.name}</h2>
                             <button onClick={onClose}><XIcon className="text-white hover:text-red-400" /></button>
                         </div>
                         <div className="p-6 space-y-6">
                             <div className="grid grid-cols-2 gap-4">
-                                <div><label className="block text-green-400 mb-2 uppercase text-xs retro-font">Date (Max {maxDays} Days)</label><input type="date" min={today} max={maxDateStr} className="w-full bg-black border-2 border-white p-2 text-white" onChange={e => setDate(e.target.value)} /></div>
-                                <div><label className="block text-green-400 mb-2 uppercase text-xs retro-font">Time Slot</label><select className="w-full bg-black border-2 border-white p-2 text-white h-[42px]" onChange={e => setTime(e.target.value)}><option value="">Select...</option>{TIME_SLOTS.map(t => (<option key={t} value={`${t} - ${parseInt(t)+1}:00`}>{t} - {parseInt(t)+1}:00</option>))}</select></div>
+                                <div><label className="block text-green-400 mb-2 uppercase text-xs retro-font">Date (Max {maxDays} Days)</label><input type="date" min={today} max={maxDateStr} className="w-full bg-black border-2 border-white p-2 text-white" value={date} onChange={e => setDate(e.target.value)} /></div>
+                                <div><label className="block text-green-400 mb-2 uppercase text-xs retro-font">Time Slot</label><select className="w-full bg-black border-2 border-white p-2 text-white h-[42px]" value={time} onChange={e => setTime(e.target.value)}><option value="">Select...</option>{TIME_SLOTS.map(t => (<option key={t} value={`${t} - ${parseInt(t)+1}:00`}>{t} - {parseInt(t)+1}:00</option>))}</select></div>
                             </div>
-                            <div>
-                                <label className="block text-green-400 mb-2 uppercase text-xs retro-font">Purpose / Event Name</label>
-                                <input type="text" className="w-full bg-black border-2 border-white p-2 text-white" placeholder="e.g. Club Meeting" onChange={e => setPurpose(e.target.value)} />
-                            </div>
+                            <div><label className="block text-green-400 mb-2 uppercase text-xs retro-font">Purpose / Event Name</label><input type="text" className="w-full bg-black border-2 border-white p-2 text-white" placeholder="e.g. Club Meeting" value={purpose} onChange={e => setPurpose(e.target.value)} /></div>
                             {venue.category === 'Sports' && (
                                 <div className="border-2 border-yellow-600 bg-yellow-900/20 p-3 flex items-center justify-between">
                                     <label className="text-yellow-400 uppercase text-xs font-bold retro-font flex items-center gap-2"><Swords /> Open Challenge?</label>
                                     <button onClick={() => setOpenChallenge(!openChallenge)} className={`w-12 h-6 border-2 border-white flex items-center px-1 transition-colors ${openChallenge ? 'bg-green-500 justify-end' : 'bg-red-500 justify-start'}`}><div className="w-4 h-4 bg-white border border-black"></div></button>
                                 </div>
                             )}
-                            <RetroButton onClick={() => onConfirm({ venue, date, time, openChallenge, purpose })} className="w-full mt-4" variant="success">CONFIRM BOOKING</RetroButton>
+                            <RetroButton onClick={() => onConfirm({ venue, date, time, openChallenge, purpose, id: bookingToEdit?.id })} className="w-full mt-4" variant="success">{bookingToEdit ? 'UPDATE BOOKING' : 'CONFIRM BOOKING'}</RetroButton>
                         </div>
                     </div>
                 </div>
@@ -330,6 +329,7 @@
             const [user, setUser] = useState(null);
             const [view, setView] = useState('map');
             const [selectedVenue, setSelectedVenue] = useState(null);
+            const [editingBooking, setEditingBooking] = useState(null);
             const [bookings, setBookings] = useState([]);
             const [time, setTime] = useState(new Date());
             const [weather, setWeather] = useState({ temp: '--', desc: 'Loading...', aqi: '--' });
@@ -338,7 +338,7 @@
             
             // Database View State
             const [searchTerm, setSearchTerm] = useState("");
-            const [sortOrder, setSortOrder] = useState("asc"); // 'asc' or 'desc'
+            const [sortOrder, setSortOrder] = useState("asc"); 
 
             // --- INIT ---
             useEffect(() => {
@@ -359,33 +359,29 @@
 
                 const timer = setInterval(() => setTime(new Date()), 60000);
                 
-                // Weather
                 const fetchWeather = async () => {
                     try {
-                        const weatherRes = await fetch('https://api.open-meteo.com/v1/forecast?latitude=22.63&longitude=75.80&current=temperature_2m,weather_code');
-                        const weatherData = await weatherRes.json();
-                        const aqiRes = await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude=22.63&longitude=75.80&current=us_aqi');
-                        const aqiData = await aqiRes.json();
+                        const w = await fetch('https://api.open-meteo.com/v1/forecast?latitude=22.63&longitude=75.80&current=temperature_2m,weather_code');
+                        const wd = await w.json();
+                        const a = await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude=22.63&longitude=75.80&current=us_aqi');
+                        const ad = await a.json();
                         const descMap = { 0: 'Clear', 1: 'Mainly Clear', 2: 'Partly Cloudy', 3: 'Overcast', 45: 'Fog', 61: 'Rain', 80: 'Showers' };
-                        setWeather({ temp: weatherData.current.temperature_2m, desc: descMap[weatherData.current.weather_code] || 'Cloudy', aqi: aqiData.current.us_aqi });
+                        setWeather({ temp: wd.current.temperature_2m, desc: descMap[wd.current.weather_code] || 'Cloudy', aqi: ad.current.us_aqi });
                     } catch (e) { setWeather({ temp: '28', desc: 'Clear', aqi: '45' }); }
                 };
                 fetchWeather();
-                return () => clearInterval(timer);
+                return () => { clearInterval(checkAuth); clearInterval(timer); }
             }, []);
 
             // --- FIRESTORE ---
             useEffect(() => {
                 if (!user || !window.dbFunctions) return;
-                
                 const loadBookings = async () => {
                     try {
                         const q = window.dbFunctions.query(window.dbFunctions.collection(window.db, "bookings"), window.dbFunctions.orderBy("timestamp", "desc"));
                         const querySnapshot = await window.dbFunctions.getDocs(q);
                         const loaded = [];
-                        querySnapshot.forEach((doc) => {
-                            loaded.push({ id: doc.id, ...doc.data() });
-                        });
+                        querySnapshot.forEach((doc) => loaded.push({ id: doc.id, ...doc.data() }));
                         setBookings(loaded);
                     } catch (e) { console.error("Firestore Error", e); }
                 };
@@ -395,27 +391,21 @@
             const handleBookingConfirm = async (data) => {
                 if(!data.date || !data.time) return alert("Select Date/Time");
                 
-                // Check for overlaps (Double Booking Prevention)
+                // Double Booking Check
                 const isConflict = bookings.some(b => 
                     b.venueId === data.venue.id && 
                     b.date === data.date && 
-                    b.time === data.time
+                    b.time === data.time && 
+                    b.id !== data.id 
                 );
 
-                if (isConflict) {
-                    alert("Slot already booked! Please choose another time.");
-                    return;
-                }
+                if (isConflict) return alert("Slot already booked! Please choose another time.");
 
-                // Safe User Details for Firestore
-                const safeUserName = (user && user.name) ? user.name : "Student";
-                const safeUserEmail = (user && user.email) ? user.email : "No Email";
-
-                const newBooking = { 
+                const payload = { 
                     venueName: data.venue.name, 
                     venueId: data.venue.id, 
-                    user: safeUserName, 
-                    email: safeUserEmail,
+                    user: user.name, 
+                    email: user.email,
                     date: data.date,
                     time: data.time,
                     purpose: data.purpose || "N/A",
@@ -424,28 +414,33 @@
                 };
 
                 try {
-                    await window.dbFunctions.addDoc(window.dbFunctions.collection(window.db, "bookings"), newBooking);
-                    alert("Booking Successful!");
+                    if (data.id) {
+                        await window.dbFunctions.updateDoc(window.dbFunctions.doc(window.db, "bookings", data.id), payload);
+                        alert("Booking Updated!");
+                    } else {
+                        await window.dbFunctions.addDoc(window.dbFunctions.collection(window.db, "bookings"), payload);
+                        alert("Booking Successful!");
+                    }
                     setView('bookings');
-                } catch(e) { 
-                    alert("Booking Failed: " + e.message);
-                    console.error(e);
-                }
+                } catch(e) { alert("Action Failed: " + e.message); }
                 
                 setSelectedVenue(null);
+                setEditingBooking(null);
             };
-            
-            // Handle Cancellation
+
             const handleCancel = async (id) => {
                 if(confirm("Cancel this booking?")) {
                     try {
                         await window.dbFunctions.deleteDoc(window.dbFunctions.doc(window.db, "bookings", id));
                         setBookings(prev => prev.filter(b => b.id !== id));
-                    } catch(e) { 
-                         console.error("Delete Error", e);
-                         alert("Failed to cancel booking.");
-                    }
+                    } catch(e) { alert("Failed to cancel."); }
                 }
+            };
+
+            const handleEdit = (booking) => {
+                const venueObj = VENUES.find(v => v.id === booking.venueId) || { name: booking.venueName, category: 'Unknown' };
+                setEditingBooking(booking);
+                setSelectedVenue(venueObj);
             };
 
             const toggleCategory = (cat) => setExpandedCat(expandedCat === cat ? null : cat);
@@ -455,7 +450,6 @@
                 return VENUES.filter(v => v.category === cat);
             };
 
-            // Database filtering and sorting logic
             const filteredBookings = bookings.filter(b => {
                 const searchLower = searchTerm.toLowerCase();
                 return (
@@ -477,14 +471,8 @@
             return (
                 <div className="min-h-screen flex flex-col relative custom-cursor overflow-x-hidden">
                     <header className="z-20 px-6 py-4 border-b border-white/10 bg-[#0f172a]/80 backdrop-blur-md flex justify-between items-center sticky top-0">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-500/20 retro-font">P</div>
-                            <div><h1 className="font-bold tracking-wider text-lg retro-font text-white">PLANET-I</h1><p className="text-xs text-gray-400 flex items-center gap-2 retro-font"><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> System Operational</p></div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="text-right hidden sm:block retro-font"><p className="text-sm font-semibold text-green-400">{user.name}</p><p className="text-xs text-gray-400">{user.role}</p></div>
-                            <button onClick={() => window.authFunctions.signOut(window.auth)} className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-red-400 transition-colors"><LogOut /></button>
-                        </div>
+                        <div className="flex items-center gap-4"><div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-500/20 retro-font">P</div><div><h1 className="font-bold tracking-wider text-lg retro-font text-white">PLANET-I</h1><p className="text-xs text-gray-400 flex items-center gap-2 retro-font"><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> System Operational</p></div></div>
+                        <div className="flex items-center gap-4"><div className="text-right hidden sm:block retro-font"><p className="text-sm font-semibold text-green-400">{user.name}</p><p className="text-xs text-gray-400">{user.role}</p></div><button onClick={() => window.authFunctions.signOut(window.auth)} className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-red-400 transition-colors"><LogOut /></button></div>
                     </header>
                     <div className="flex-1 flex flex-col md:flex-row relative z-10">
                         <aside className="w-full md:w-72 p-6 flex flex-col gap-6 border-r border-white/10 bg-[#0f172a]/80 backdrop-blur-md md:h-[calc(100vh-80px)] md:sticky md:top-[80px] overflow-y-auto">
@@ -497,9 +485,7 @@
                             <nav className="space-y-4 text-lg retro-font tracking-widest">
                                 <button onClick={() => setView('map')} className={`block w-full text-left p-2 rounded hover:bg-white/10 transition-colors ${view === 'map' ? 'text-yellow-400' : 'text-white'}`}>MAP</button>
                                 <button onClick={() => setView('bookings')} className={`block w-full text-left p-2 rounded hover:bg-white/10 transition-colors ${view === 'bookings' ? 'text-yellow-400' : 'text-white'}`}>MY BOOKINGS</button>
-                                {user.email === ADMIN_EMAIL && (
-                                    <button onClick={() => setView('database')} className={`block w-full text-left p-2 rounded hover:bg-white/10 transition-colors ${view === 'database' ? 'text-yellow-400' : 'text-white'}`}>DATABASE</button>
-                                )}
+                                {user.email === ADMIN_EMAIL && <button onClick={() => setView('database')} className={`block w-full text-left p-2 rounded hover:bg-white/10 transition-colors ${view === 'database' ? 'text-yellow-400' : 'text-white'}`}>DATABASE</button>}
                                 <div className="h-px bg-white/20 my-4"></div>
                                 {['Sports', 'Admin', 'Auditorium'].map(cat => (
                                     <div key={cat}>
@@ -515,7 +501,7 @@
                             {view === 'bookings' && (
                                 <div className="w-full h-full bg-[#1e293b]/90 border-4 border-white p-8 overflow-y-auto backdrop-blur-sm relative flex flex-col rounded-xl shadow-2xl">
                                     <div className="flex justify-between items-center mb-8 border-b-4 border-white pb-4"><h2 className="text-3xl text-yellow-400 retro-font">MY BOOKINGS</h2><button onClick={() => setView('map')} className="text-gray-400 hover:text-white p-2 border-2 border-transparent hover:border-white transition-all"><ArrowLeft className="w-8 h-8" /></button></div>
-                                    {bookings.filter(b => b.email === user.email).length === 0 ? (<div className="flex-1 flex items-center justify-center"><p className="text-gray-400 retro-font text-xl animate-pulse">NO ACTIVE QUESTS.</p></div>) : (<div className="grid gap-4 w-full">{bookings.filter(b => b.email === user.email).map(b => (<div key={b.id} className="bg-black/40 border-2 border-white p-6 flex justify-between items-center hover:bg-white/5 transition-colors"><div><div className="text-xl text-green-400 font-bold uppercase mb-2 retro-font">{b.venueName}</div><div className="text-md text-white font-mono">{b.date} @ {b.time}</div>{b.openChallenge && <div className="text-sm text-yellow-400 mt-2 animate-pulse">{'>'}{'>'} OPEN CHALLENGE ACTIVE</div>}</div><div className="text-green-500 font-bold retro-font flex items-center gap-4">CONFIRMED <button onClick={() => handleCancel(b.id)} className="bg-red-500/20 p-2 rounded hover:bg-red-500 text-red-400 hover:text-white transition-colors"><XIcon className="w-4 h-4"/></button></div></div>))}</div>)}
+                                    {bookings.filter(b => b.email === user.email).length === 0 ? (<div className="flex-1 flex items-center justify-center"><p className="text-gray-400 retro-font text-xl animate-pulse">NO ACTIVE QUESTS.</p></div>) : (<div className="grid gap-4 w-full">{bookings.filter(b => b.email === user.email).map(b => (<div key={b.id} className="bg-black/40 border-2 border-white p-6 flex justify-between items-center hover:bg-white/5 transition-colors"><div><div className="text-xl text-green-400 font-bold uppercase mb-2 retro-font">{b.venueName}</div><div className="text-md text-white font-mono">{b.date} @ {b.time}</div>{b.openChallenge && <div className="text-sm text-yellow-400 mt-2 animate-pulse">{'>'}{'>'} OPEN CHALLENGE ACTIVE</div>}</div><div className="flex gap-2"><button onClick={() => handleEdit(b)} className="bg-blue-500/20 p-2 rounded hover:bg-blue-500 text-blue-400 hover:text-white transition-colors"><EditIcon className="w-4 h-4"/></button><button onClick={() => handleCancel(b.id)} className="bg-red-500/20 p-2 rounded hover:bg-red-500 text-red-400 hover:text-white transition-colors"><XIcon className="w-4 h-4"/></button></div></div>))}</div>)}
                                 </div>
                             )}
                             {view === 'heatmap' && (
@@ -527,71 +513,25 @@
                             )}
                             {view === 'database' && (
                                 <div className="w-full h-full bg-[#1e293b]/95 border-4 border-white p-8 overflow-y-auto backdrop-blur-sm relative flex flex-col rounded-xl shadow-2xl">
-                                    <div className="flex justify-between items-center mb-8 border-b-4 border-white pb-4">
-                                        <h2 className="text-3xl text-yellow-400 retro-font">BOOKINGS DATABASE</h2>
-                                        <button onClick={() => setView('map')} className="text-gray-400 hover:text-white p-2 border-2 border-transparent hover:border-white transition-all"><ArrowLeft className="w-8 h-8" /></button>
-                                    </div>
-                                    
-                                    {/* --- TOOLBAR FOR DATABASE VIEW --- */}
-                                    <div className="flex gap-4 mb-4">
-                                        <div className="relative flex-1">
-                                            <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
-                                            <input 
-                                                type="text" 
-                                                placeholder="Search bookings..." 
-                                                className="w-full bg-black border border-gray-600 pl-10 pr-4 py-2 text-white focus:outline-none focus:border-yellow-400"
-                                                value={searchTerm}
-                                                onChange={(e) => setSearchTerm(e.target.value)}
-                                            />
-                                        </div>
-                                        <button 
-                                            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                                            className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white"
-                                        >
-                                            <Filter className="w-4 h-4" />
-                                            Sort by Date {sortOrder === 'asc' ? '↑' : '↓'}
-                                        </button>
-                                    </div>
-
+                                    <div className="flex justify-between items-center mb-8 border-b-4 border-white pb-4"><h2 className="text-3xl text-yellow-400 retro-font">BOOKINGS DATABASE</h2><button onClick={() => setView('map')} className="text-gray-400 hover:text-white p-2 border-2 border-transparent hover:border-white transition-all"><ArrowLeft className="w-8 h-8" /></button></div>
+                                    <div className="flex gap-4 mb-4"><div className="relative flex-1"><Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" /><input type="text" placeholder="Search bookings..." className="w-full bg-black border border-gray-600 pl-10 pr-4 py-2 text-white focus:outline-none focus:border-yellow-400" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div><button onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')} className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white"><Filter className="w-4 h-4" /> Sort by Date {sortOrder === 'asc' ? '↑' : '↓'}</button></div>
                                     <div className="retro-table-container">
                                         <table className="retro-table">
-                                            <thead><tr><th>#</th><th>VENUE</th><th>DATE</th><th>TIME</th><th>USER</th><th>EMAIL</th></tr></thead>
-                                            <tbody>
-                                                {filteredBookings.map((b, i) => (
-                                                    <tr key={b.id}><td className="row-id">{i+1}</td><td>{b.venueName}</td><td>{b.date}</td><td>{b.time}</td><td>{b.user}</td><td style={{textTransform:'lowercase'}}>{b.email}</td></tr>
-                                                ))}
-                                            </tbody>
+                                            <thead><tr><th>#</th><th>VENUE</th><th>DATE</th><th>TIME</th><th>USER</th><th>EMAIL</th><th>PURPOSE</th></tr></thead>
+                                            <tbody>{filteredBookings.map((b, i) => (<tr key={b.id}><td className="row-id">{i+1}</td><td>{b.venueName}</td><td>{b.date}</td><td>{b.time}</td><td>{b.user}</td><td style={{textTransform:'lowercase'}}>{b.email}</td><td>{b.purpose}</td></tr>))}</tbody>
                                         </table>
                                     </div>
                                 </div>
                             )}
                         </main>
                     </div>
-                    {selectedVenue && (<BookingModal venue={selectedVenue} onClose={() => setSelectedVenue(null)} onConfirm={handleBookingConfirm} />)}
+                    {(selectedVenue || editingBooking) && (<BookingModal venue={selectedVenue} bookingToEdit={editingBooking} onClose={() => { setSelectedVenue(null); setEditingBooking(null); }} onConfirm={handleBookingConfirm} />)}
                 </div>
             );
         };
 
-        const Root = () => {
-            const [isLoaded, setIsLoaded] = useState(false);
-
-            useEffect(() => {
-                const checkFirebase = setInterval(() => {
-                    if (window.authFunctions && window.db) {
-                        clearInterval(checkFirebase);
-                        setIsLoaded(true);
-                    }
-                }, 50);
-                return () => clearInterval(checkFirebase);
-            }, []);
-
-            if (!isLoaded) return <div className="flex items-center justify-center h-screen text-green-500 retro-font animate-pulse">INITIALIZING UPLINK...</div>;
-
-            return <PixelPlanetApp />;
-        };
-
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<Root />);
+        root.render(<PixelPlanetApp />);
     </script>
 </body>
 </html>
