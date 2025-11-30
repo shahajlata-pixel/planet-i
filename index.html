@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planet-I Booking System</title>
     
-    <!-- Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -96,7 +93,7 @@
         // --- FIREBASE IMPORTS ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
@@ -122,14 +119,14 @@
             onAuthStateChanged, 
             sendPasswordResetEmail
         };
-        window.dbFunctions = { collection, addDoc, getDocs, query, orderBy, where };
+        // Added 'deleteDoc' and 'doc' to window functions
+        window.dbFunctions = { collection, addDoc, getDocs, query, orderBy, where, deleteDoc, doc };
     </script>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
         
         // --- CONSTANTS ---
-        const BACKEND_URL = "http://localhost:3001";
         const ADMIN_EMAIL = "i24lata@iimidr.ac.in";
         const REQUIRED_DOMAIN = "@iimidr.ac.in";
 
@@ -157,7 +154,7 @@
             { id: 'a1', name: 'New Auditorium', category: 'Auditorium', x: 75, y: 40 },
             { id: 'a2', name: 'Old Auditorium', category: 'Auditorium', x: 70, y: 35 },
             { id: 'a3', name: 'New Audi Amphi', category: 'Auditorium', x: 80, y: 45 },
-            { id: 'a4', name: 'Old Audi Amphi', category: 'Auditorium', x: 82, y: 38 }, // NEW VENUE
+            { id: 'a4', name: 'Old Audi Amphi', category: 'Auditorium', x: 82, y: 38 },
             { id: 'c1', name: 'E-301 (Academic)', category: 'Classroom', x: 50, y: 30 },
             { id: 'c2', name: 'E-303 (Academic)', category: 'Classroom', x: 55, y: 30 },
             { id: 'c3', name: 'D-301 (Academic)', category: 'Classroom', x: 45, y: 30 },
@@ -224,11 +221,10 @@
                 }
 
                 try {
-                    let userCred;
                     if (isLogin) {
-                        userCred = await window.authFunctions.signInWithEmailAndPassword(window.auth, email, password);
+                        await window.authFunctions.signInWithEmailAndPassword(window.auth, email, password);
                     } else {
-                        userCred = await window.authFunctions.createUserWithEmailAndPassword(window.auth, email, password);
+                        await window.authFunctions.createUserWithEmailAndPassword(window.auth, email, password);
                     }
                 } catch (err) {
                     console.error(err);
@@ -347,7 +343,7 @@
                         clearInterval(checkAuth);
                         const unsubscribe = window.authFunctions.onAuthStateChanged(window.auth, (u) => {
                             if (u) {
-                                const name = u.email.split('@')[0]; // Fallback to email name since Email/Pass doesn't ask for name on signup
+                                const name = u.email.split('@')[0]; 
                                 setUser({ name: name, email: u.email, role: 'Student' });
                             } else {
                                 setUser(null);
@@ -407,15 +403,11 @@
                     return;
                 }
 
-                // Safe User Details for Firestore
-                const safeUserName = (user && user.name) ? user.name : "Student";
-                const safeUserEmail = (user && user.email) ? user.email : "No Email";
-
                 const newBooking = { 
                     venueName: data.venue.name, 
                     venueId: data.venue.id, 
-                    user: safeUserName, 
-                    email: safeUserEmail,
+                    user: user.name, 
+                    email: user.email,
                     date: data.date,
                     time: data.time,
                     purpose: data.purpose || "N/A",
@@ -433,6 +425,20 @@
                 }
                 
                 setSelectedVenue(null);
+            };
+            
+            // Handle Cancellation
+            const handleCancel = async (id) => {
+                if(confirm("Cancel this booking?")) {
+                    try {
+                        await window.dbFunctions.deleteDoc(window.dbFunctions.doc(window.db, "bookings", id));
+                        // Note: The useEffect listener will refresh the list, but we can optimistically update too
+                        setBookings(prev => prev.filter(b => b.id !== id));
+                    } catch(e) { 
+                         console.error("Delete Error", e);
+                         alert("Failed to cancel booking.");
+                    }
+                }
             };
 
             const toggleCategory = (cat) => setExpandedCat(expandedCat === cat ? null : cat);
@@ -485,7 +491,7 @@
                             {view === 'bookings' && (
                                 <div className="w-full h-full bg-[#1e293b]/90 border-4 border-white p-8 overflow-y-auto backdrop-blur-sm relative flex flex-col rounded-xl shadow-2xl">
                                     <div className="flex justify-between items-center mb-8 border-b-4 border-white pb-4"><h2 className="text-3xl text-yellow-400 retro-font">MY BOOKINGS</h2><button onClick={() => setView('map')} className="text-gray-400 hover:text-white p-2 border-2 border-transparent hover:border-white transition-all"><ArrowLeft className="w-8 h-8" /></button></div>
-                                    {bookings.filter(b => b.email === user.email).length === 0 ? (<div className="flex-1 flex items-center justify-center"><p className="text-gray-400 retro-font text-xl animate-pulse">NO ACTIVE QUESTS.</p></div>) : (<div className="grid gap-4 w-full">{bookings.filter(b => b.email === user.email).map(b => (<div key={b.id} className="bg-black/40 border-2 border-white p-6 flex justify-between items-center hover:bg-white/5 transition-colors"><div><div className="text-xl text-green-400 font-bold uppercase mb-2 retro-font">{b.venueName}</div><div className="text-md text-white font-mono">{b.date} @ {b.time}</div>{b.openChallenge && <div className="text-sm text-yellow-400 mt-2 animate-pulse">{'>'}{'>'} OPEN CHALLENGE ACTIVE</div>}</div><div className="text-green-500 font-bold retro-font">CONFIRMED</div></div>))}</div>)}
+                                    {bookings.filter(b => b.email === user.email).length === 0 ? (<div className="flex-1 flex items-center justify-center"><p className="text-gray-400 retro-font text-xl animate-pulse">NO ACTIVE QUESTS.</p></div>) : (<div className="grid gap-4 w-full">{bookings.filter(b => b.email === user.email).map(b => (<div key={b.id} className="bg-black/40 border-2 border-white p-6 flex justify-between items-center hover:bg-white/5 transition-colors"><div><div className="text-xl text-green-400 font-bold uppercase mb-2 retro-font">{b.venueName}</div><div className="text-md text-white font-mono">{b.date} @ {b.time}</div>{b.openChallenge && <div className="text-sm text-yellow-400 mt-2 animate-pulse">{'>'}{'>'} OPEN CHALLENGE ACTIVE</div>}</div><RetroButton variant="danger" onClick={() => handleCancel(b.id)} className="text-sm py-3 px-6">CANCEL</RetroButton></div>))}</div>)}
                                 </div>
                             )}
                             {view === 'heatmap' && (
