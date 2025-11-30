@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Planet-I Booking System</title>
     
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -154,6 +157,7 @@
             { id: 'a1', name: 'New Auditorium', category: 'Auditorium', x: 75, y: 40 },
             { id: 'a2', name: 'Old Auditorium', category: 'Auditorium', x: 70, y: 35 },
             { id: 'a3', name: 'New Audi Amphi', category: 'Auditorium', x: 80, y: 45 },
+            { id: 'a4', name: 'Old Audi Amphi', category: 'Auditorium', x: 82, y: 38 }, // NEW VENUE
             { id: 'c1', name: 'E-301 (Academic)', category: 'Classroom', x: 50, y: 30 },
             { id: 'c2', name: 'E-303 (Academic)', category: 'Classroom', x: 55, y: 30 },
             { id: 'c3', name: 'D-301 (Academic)', category: 'Classroom', x: 45, y: 30 },
@@ -214,7 +218,6 @@
                 e.preventDefault();
                 setError('');
                 
-                // Strict Domain Validation for Sign Up
                 if (!isLogin && !email.endsWith(REQUIRED_DOMAIN)) {
                     setError(`RESTRICTED ACCESS: Only ${REQUIRED_DOMAIN} emails are allowed.`);
                     return;
@@ -227,10 +230,8 @@
                     } else {
                         userCred = await window.authFunctions.createUserWithEmailAndPassword(window.auth, email, password);
                     }
-                    // Successful login/signup will trigger onAuthStateChanged
                 } catch (err) {
                     console.error(err);
-                    // Handle common Firebase errors
                     if (err.code === 'auth/operation-not-allowed') {
                         setError("ERROR: Email/Password login is disabled in Firebase Console.");
                     } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
@@ -394,9 +395,21 @@
             const handleBookingConfirm = async (data) => {
                 if(!data.date || !data.time) return alert("Select Date/Time");
                 
+                // Check for overlaps (Double Booking Prevention)
+                const isBooked = bookings.some(b => 
+                    b.venueId === data.venue.id && 
+                    b.date === data.date && 
+                    b.time === data.time
+                );
+
+                if (isBooked) {
+                    alert("Slot already booked! Please choose another time.");
+                    return;
+                }
+
                 // Safe User Details for Firestore
                 const safeUserName = (user && user.name) ? user.name : "Student";
-                const safeUserEmail = (user && user.email) ? user.email : "Unknown";
+                const safeUserEmail = (user && user.email) ? user.email : "No Email";
 
                 const newBooking = { 
                     venueName: data.venue.name, 
