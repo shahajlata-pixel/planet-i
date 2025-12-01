@@ -32,7 +32,7 @@
             image-rendering: pixelated;
             margin: 0;
             color: white;
-            overflow: hidden; /* Main scroll handled by container */
+            overflow: hidden;
         }
 
         .custom-cursor { cursor: crosshair; }
@@ -67,92 +67,60 @@
             box-shadow: inset -4px -4px 0px 0px rgba(0,0,0,0.5); transition: transform 0.1s; cursor: pointer;
         }
         .pixel-btn:active { transform: translateY(2px); box-shadow: inset -2px -2px 0px 0px rgba(0,0,0,0.5); }
+        .pixel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         
         ::-webkit-scrollbar { width: 10px; background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #3b82f6; border: 2px solid #0f172a; }
 
-        /* FIXED TABLE STYLES */
-        .retro-table-container { 
-            border: 4px solid white; 
-            box-shadow: 4px 4px 0px #000; 
-            background: #0f172a; 
-            overflow: auto; 
-            flex: 1; 
-            min-height: 0;
-            width: 100%;
-        }
-        
-        .retro-table { 
-            width: 100%; 
-            border-collapse: separate; /* Crucial for sticky headers */
-            border-spacing: 0;
-            font-family: 'VT323', monospace; 
-            font-size: 1.1rem; 
-            color: #4ade80; 
-            white-space: nowrap; 
-        }
-        
-        .retro-table th { 
-            background: #1e293b; 
-            color: #fbbf24; 
-            padding: 8px; 
-            border-bottom: 2px solid #fff; 
-            border-right: 1px solid #334155;
-            text-align: left; 
-            position: sticky; 
-            top: 0; 
-            z-index: 50; /* Ensure it stays on top */
-            min-width: 150px; /* Ensure enough space for inputs */
-        }
-        
-        .retro-table th:first-child { min-width: 50px; } /* ID column smaller */
-
-        .retro-table td { 
-            padding: 8px; 
-            border-bottom: 1px solid #334155; 
-            border-right: 1px solid #334155;
-            background: #0f172a; 
-        }
-        
-        .retro-table tr:hover td { 
-            background: #1e293b; 
-            color: white; 
-            cursor: crosshair; 
-        }
-        
+        /* Excel Styles */
+        .retro-table-container { border: 4px solid white; box-shadow: 4px 4px 0px #000; background: #0f172a; overflow: auto; height: 100%; }
+        .retro-table { width: 100%; border-collapse: collapse; font-family: 'VT323', monospace; font-size: 1.2rem; color: #4ade80; white-space: nowrap; }
+        .retro-table th { background: #1e293b; color: #fbbf24; text-transform: uppercase; padding: 12px; border: 2px solid #334155; text-align: left; font-family: 'Press Start 2P', cursive; font-size: 0.7rem; letter-spacing: 1px; position: sticky; top: 0; }
+        .retro-table td { padding: 10px; border: 2px solid #334155; }
+        .retro-table tr:hover { background: #1e293b; color: white; cursor: crosshair; }
         .retro-table .row-id { color: #94a3b8; font-family: monospace; }
         
-        /* Auth Form Styles */
+        /* Auth & Form Styles */
         .auth-input { width: 100%; background: #000; border: 2px solid #fff; padding: 10px; color: #fff; font-family: 'VT323', monospace; font-size: 1.2rem; margin-bottom: 10px; }
         .auth-input:focus { border-color: #fbbf24; outline: none; }
         
-        /* Filter Input Styling inside Headers */
-        .table-filter-input {
-            width: 100%;
-            background: #000;
-            border: 1px solid #64748b;
-            color: white;
-            padding: 4px 8px;
-            font-family: 'VT323', monospace;
-            font-size: 1rem;
-            margin-top: 6px;
-            outline: none;
-        }
-        .table-filter-input:focus { border-color: #fbbf24; }
+        .filter-select { background: #000; color: white; border: 2px solid #334155; padding: 8px; font-family: 'VT323', monospace; font-size: 1rem; outline: none; }
+        .filter-select:focus { border-color: #fbbf24; }
+        .filter-input { width: 100%; background: #000; border: 2px solid #334155; padding: 8px; color: white; font-family: 'VT323', monospace; font-size: 1.2rem; }
         
-        .sort-header-content {
+        .sort-header { cursor: pointer; display: flex; align-items: center; }
+        .sort-icon { margin-left: 5px; color: #fbbf24; }
+        .sort-icon.inactive { color: #64748b; }
+
+        /* Captcha Style */
+        .captcha-box {
+            background: #f9f9f9;
+            border: 1px solid #d3d3d3;
+            border-radius: 3px;
+            padding: 10px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-family: 'Press Start 2P', cursive; 
-            font-size: 0.6rem; 
-            letter-spacing: 1px;
-            margin-bottom: 4px;
+            margin-bottom: 15px;
+            color: #000;
+            font-family: sans-serif;
+        }
+        .captcha-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+        .captcha-checkbox {
+            width: 24px;
+            height: 24px;
             cursor: pointer;
         }
-        .sort-header-content:hover { color: white; }
-
-        .sort-arrow { color: #fbbf24; font-size: 1rem; }
+        .captcha-logo {
+            width: 32px;
+            height: 32px;
+            opacity: 0.7;
+        }
     </style>
 </head>
 <body>
@@ -163,7 +131,7 @@
     <script type="module">
         // --- FIREBASE IMPORTS ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, where, deleteDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // --- FIREBASE CONFIGURATION ---
@@ -180,7 +148,6 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Make Firebase available to React globally
         window.db = db;
         window.auth = auth;
         window.authFunctions = { 
@@ -188,7 +155,8 @@
             signInWithEmailAndPassword, 
             signOut, 
             onAuthStateChanged, 
-            sendPasswordResetEmail
+            sendPasswordResetEmail,
+            sendEmailVerification
         };
         window.dbFunctions = { collection, addDoc, getDocs, onSnapshot, query, orderBy, where, deleteDoc, updateDoc, doc };
     </script>
@@ -212,8 +180,6 @@
         const Sparkles = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>;
         const LogOut = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>;
         const ChevronDown = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"></polyline></svg>;
-        const Coffee = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>;
-        const Database = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>;
         const Search = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
         const Filter = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>;
 
@@ -273,9 +239,9 @@
             );
         };
 
-        const RetroButton = ({ children, onClick, className = "", variant = "primary" }) => {
+        const RetroButton = ({ children, onClick, className = "", variant = "primary", disabled = false }) => {
             const colors = { primary: 'bg-blue-600 hover:bg-blue-500', danger: 'bg-red-600 hover:bg-red-500', success: 'bg-green-600 hover:bg-green-500', neutral: 'bg-gray-600 hover:bg-gray-500' };
-            return <button onClick={onClick} className={`${colors[variant]} text-white font-bold py-2 px-4 border-b-4 border-r-4 border-black active:border-0 active:mt-1 active:ml-1 uppercase tracking-wider font-retro text-sm transition-transform ${className}`}>{children}</button>;
+            return <button onClick={onClick} disabled={disabled} className={`${colors[variant]} text-white font-bold py-2 px-4 border-b-4 border-r-4 border-black active:border-0 active:mt-1 active:ml-1 uppercase tracking-wider font-retro text-sm transition-transform ${className} disabled:opacity-50 disabled:cursor-not-allowed`}>{children}</button>;
         };
 
         const AuthScreen = ({ onLogin }) => {
@@ -283,10 +249,16 @@
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
+            const [captchaVerified, setCaptchaVerified] = useState(false);
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
                 setError('');
+                
+                if (!captchaVerified) {
+                    setError("Please verify you are not a robot.");
+                    return;
+                }
                 
                 if (!isLogin && !email.endsWith(REQUIRED_DOMAIN)) {
                     setError(`RESTRICTED ACCESS: Only ${REQUIRED_DOMAIN} emails are allowed.`);
@@ -294,11 +266,19 @@
                 }
 
                 try {
-                    let userCred;
                     if (isLogin) {
-                        userCred = await window.authFunctions.signInWithEmailAndPassword(window.auth, email, password);
+                        const userCredential = await window.authFunctions.signInWithEmailAndPassword(window.auth, email, password);
+                        if (!userCredential.user.emailVerified) {
+                            await window.authFunctions.signOut(window.auth);
+                            setError("ACCESS DENIED: Please verify your email address.");
+                            return;
+                        }
                     } else {
-                        userCred = await window.authFunctions.createUserWithEmailAndPassword(window.auth, email, password);
+                        const userCredential = await window.authFunctions.createUserWithEmailAndPassword(window.auth, email, password);
+                        await window.authFunctions.sendEmailVerification(userCredential.user);
+                        await window.authFunctions.signOut(window.auth);
+                        alert("Account Created! A verification email has been sent to " + email + ". Please verify before logging in.");
+                        setIsLogin(true);
                     }
                 } catch (err) {
                     console.error(err);
@@ -345,9 +325,23 @@
                                 <input type="password" className="auth-input" value={password} onChange={e=>setPassword(e.target.value)} required />
                             </div>
                             
+                            {/* Custom Mock Captcha */}
+                            <div className="captcha-box">
+                                <label className="captcha-label">
+                                    <input 
+                                        type="checkbox" 
+                                        className="captcha-checkbox" 
+                                        checked={captchaVerified}
+                                        onChange={(e) => setCaptchaVerified(e.target.checked)}
+                                    />
+                                    I'm not a robot
+                                </label>
+                                <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" alt="captcha" className="captcha-logo"/>
+                            </div>
+
                             {error && <p className="text-red-500 text-xs font-bold blink">{error}</p>}
                             
-                            <RetroButton className="w-full mt-2">{isLogin ? 'AUTHENTICATE' : 'REGISTER ID'}</RetroButton>
+                            <RetroButton className="w-full mt-2" disabled={!captchaVerified}>{isLogin ? 'AUTHENTICATE' : 'REGISTER ID'}</RetroButton>
                         </form>
                         
                         {isLogin && (
@@ -407,10 +401,14 @@
             const [aiInsight, setAiInsight] = useState("System Idle. Waiting for data...");
             const [expandedCat, setExpandedCat] = useState(null);
             
-            // Database View State - Multi-Column Filter
-            const [filters, setFilters] = useState({ venue: '', date: '', time: '', user: '', email: '', purpose: '', challenge: 'All' });
+            // Database View State
+            const [searchTerm, setSearchTerm] = useState("");
             const [sortOrder, setSortOrder] = useState("asc");
-            const [sortColumn, setSortColumn] = useState("date");
+            const [sortColumn, setSortColumn] = useState("date"); // Default sort column
+            const [venueFilter, setVenueFilter] = useState("All"); 
+            const [challengeFilter, setChallengeFilter] = useState(false); 
+            // Added column specific filter state
+            const [colFilters, setColFilters] = useState({ venue: '', date: '', time: '', user: '', email: '', purpose: '' });
 
             // --- INIT ---
             useEffect(() => {
@@ -419,8 +417,13 @@
                         clearInterval(checkAuth);
                         const unsubscribe = window.authFunctions.onAuthStateChanged(window.auth, (u) => {
                             if (u) {
-                                const name = u.email.split('@')[0]; 
-                                setUser({ name: name, email: u.email, role: 'Student' });
+                                // Ensure we only allow verified users or specific admin email
+                                if (u.emailVerified || u.email === ADMIN_EMAIL) {
+                                    const name = u.email.split('@')[0]; 
+                                    setUser({ name: name, email: u.email, role: 'Student' });
+                                } else {
+                                    setUser(null); // User exists but not verified
+                                }
                             } else {
                                 setUser(null);
                             }
@@ -445,27 +448,47 @@
                 return () => { clearInterval(checkAuth); clearInterval(timer); }
             }, []);
 
-            // --- FIRESTORE ---
+            // --- FIRESTORE REAL-TIME LISTENER ---
             useEffect(() => {
                 if (!user || !window.dbFunctions) return;
+                
+                // Use onSnapshot for real-time updates
                 const q = window.dbFunctions.query(window.dbFunctions.collection(window.db, "bookings"), window.dbFunctions.orderBy("timestamp", "desc"));
+                
                 const unsubscribe = window.dbFunctions.onSnapshot(q, (snapshot) => {
                     const loaded = [];
                     snapshot.forEach((doc) => loaded.push({ id: doc.id, ...doc.data() }));
                     setBookings(loaded);
-                }, (error) => { console.error("Firestore Error", error); });
+                }, (error) => {
+                    console.error("Firestore Error", error);
+                });
+
                 return () => unsubscribe();
             }, [user]);
 
             const handleBookingConfirm = async (data) => {
                 if(!data.date || !data.time) return alert("Select Date/Time");
-                const isConflict = bookings.some(b => b.venueId === data.venue.id && b.date === data.date && b.time === data.time && b.id !== data.id);
+                
+                // Double Booking Check
+                const isConflict = bookings.some(b => 
+                    b.venueId === data.venue.id && 
+                    b.date === data.date && 
+                    b.time === data.time && 
+                    b.id !== data.id 
+                );
+
                 if (isConflict) return alert("Slot already booked! Please choose another time.");
 
                 const payload = { 
-                    venueName: data.venue.name, venueId: data.venue.id, user: user.name, email: user.email,
-                    date: data.date, time: data.time, purpose: data.purpose || "N/A",
-                    openChallenge: data.openChallenge || false, timestamp: new Date()
+                    venueName: data.venue.name, 
+                    venueId: data.venue.id, 
+                    user: user.name, 
+                    email: user.email,
+                    date: data.date,
+                    time: data.time,
+                    purpose: data.purpose || "N/A",
+                    openChallenge: data.openChallenge || false,
+                    timestamp: new Date()
                 };
 
                 try {
@@ -478,18 +501,24 @@
                     }
                     setView('bookings');
                 } catch(e) { alert("Action Failed: " + e.message); }
-                setSelectedVenue(null); setEditingBooking(null);
+                
+                setSelectedVenue(null);
+                setEditingBooking(null);
             };
 
             const handleCancel = async (id) => {
                 if(confirm("Cancel this booking?")) {
-                    try { await window.dbFunctions.deleteDoc(window.dbFunctions.doc(window.db, "bookings", id)); } catch(e) { alert("Failed to cancel."); }
+                    try {
+                        await window.dbFunctions.deleteDoc(window.dbFunctions.doc(window.db, "bookings", id));
+                        // No need to setBookings manually, onSnapshot will handle it
+                    } catch(e) { alert("Failed to cancel."); }
                 }
             };
 
             const handleEdit = (booking) => {
                 const venueObj = VENUES.find(v => v.id === booking.venueId) || { name: booking.venueName, category: 'Unknown' };
-                setEditingBooking(booking); setSelectedVenue(venueObj);
+                setEditingBooking(booking);
+                setSelectedVenue(venueObj);
             };
 
             const toggleCategory = (cat) => setExpandedCat(expandedCat === cat ? null : cat);
@@ -498,39 +527,91 @@
                 if (cat === 'Admin') return VENUES.filter(v => map['Admin'].includes(v.category));
                 return VENUES.filter(v => v.category === cat);
             };
-
+            
             const handleSort = (column) => {
-                if (sortColumn === column) setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                else { setSortColumn(column); setSortOrder('asc'); }
+                if (sortColumn === column) {
+                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                } else {
+                    setSortColumn(column);
+                    setSortOrder('asc');
+                }
             };
 
             const handleFilterChange = (column, value) => {
-                setFilters(prev => ({ ...prev, [column]: value }));
+                setColFilters(prev => ({ ...prev, [column]: value }));
             };
 
+            // --- FILTER & SORT LOGIC FOR DATABASE VIEW ---
             const filteredBookings = bookings.filter(b => {
-                return (
-                    b.venueName.toLowerCase().includes(filters.venue.toLowerCase()) &&
-                    b.date.toLowerCase().includes(filters.date.toLowerCase()) &&
-                    b.time.toLowerCase().includes(filters.time.toLowerCase()) &&
-                    b.user.toLowerCase().includes(filters.user.toLowerCase()) &&
-                    b.email.toLowerCase().includes(filters.email.toLowerCase()) &&
-                    (b.purpose || '').toLowerCase().includes(filters.purpose.toLowerCase()) &&
-                    (filters.challenge === 'All' || (filters.challenge === 'yes' ? b.openChallenge : !b.openChallenge))
+                const searchLower = searchTerm.toLowerCase();
+                // 1. General Search
+                const matchesSearch = (
+                    b.venueName.toLowerCase().includes(searchLower) ||
+                    b.user.toLowerCase().includes(searchLower) ||
+                    b.email.toLowerCase().includes(searchLower) ||
+                    (b.purpose && b.purpose.toLowerCase().includes(searchLower))
                 );
+                // 2. Venue Filter (Dropdown)
+                const matchesVenue = venueFilter === "All" || b.venueName === venueFilter;
+                // 3. Challenge Filter (Checkbox)
+                const matchesChallenge = !challengeFilter || b.openChallenge;
+                
+                // 4. Column Specific Filters
+                const matchesColVenue = b.venueName.toLowerCase().includes(colFilters.venue.toLowerCase());
+                const matchesColDate = b.date.toLowerCase().includes(colFilters.date.toLowerCase());
+                const matchesColTime = b.time.toLowerCase().includes(colFilters.time.toLowerCase());
+                const matchesColUser = b.user.toLowerCase().includes(colFilters.user.toLowerCase());
+                const matchesColEmail = b.email.toLowerCase().includes(colFilters.email.toLowerCase());
+                const matchesColPurpose = (b.purpose || '').toLowerCase().includes(colFilters.purpose.toLowerCase());
+
+                return matchesSearch && matchesVenue && matchesChallenge && matchesColVenue && matchesColDate && matchesColTime && matchesColUser && matchesColEmail && matchesColPurpose;
             }).sort((a, b) => {
                 const isAsc = sortOrder === 'asc';
-                let valA = a[sortColumn === 'venue' ? 'venueName' : sortColumn] || '';
-                let valB = b[sortColumn === 'venue' ? 'venueName' : sortColumn] || '';
+                let compareA, compareB;
+
+                switch (sortColumn) {
+                    case 'venue':
+                        compareA = a.venueName;
+                        compareB = b.venueName;
+                        break;
+                    case 'user':
+                        compareA = a.user;
+                        compareB = b.user;
+                        break;
+                    case 'email':
+                        compareA = a.email;
+                        compareB = b.email;
+                        break;
+                    case 'purpose':
+                        compareA = a.purpose;
+                        compareB = b.purpose;
+                        break;
+                    case 'challenge':
+                        compareA = a.openChallenge;
+                        compareB = b.openChallenge;
+                        break;
+                    case 'time': 
+                        compareA = a.time;
+                        compareB = b.time;
+                        break;
+                    case 'bookedAt': 
+                        compareA = (a.timestamp && a.timestamp.toDate) ? a.timestamp.toDate().getTime() : 0;
+                        compareB = (b.timestamp && b.timestamp.toDate) ? b.timestamp.toDate().getTime() : 0;
+                        break;
+                    case 'date':
+                    default: 
+                        const dateA = new Date(a.date);
+                        const dateB = new Date(b.date);
+                        return isAsc ? dateA - dateB : dateB - dateA;
+                }
                 
-                if (sortColumn === 'bookedAt') {
-                     valA = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : 0;
-                     valB = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : 0;
+                if (typeof compareA === 'string' && typeof compareB === 'string') {
+                    if (isAsc) return compareA.localeCompare(compareB);
+                    return compareB.localeCompare(compareA);
                 }
 
-                if (valA < valB) return isAsc ? -1 : 1;
-                if (valA > valB) return isAsc ? 1 : -1;
-                return 0;
+                if (isAsc) return compareA > compareB ? 1 : -1;
+                return compareB > compareA ? 1 : -1;
             });
 
             if (!user) return <AuthScreen onLogin={setUser} />;
@@ -543,6 +624,7 @@
                     </header>
                     
                     <div className="flex-1 flex flex-col md:flex-row relative z-10 min-h-[calc(100vh-80px)]"> 
+                        {/* LEFT ASIDE MENU */}
                         <aside className="w-full md:w-72 p-6 flex flex-col gap-6 border-r border-white/10 bg-[#0f172a]/80 backdrop-blur-md sticky top-[80px] h-[calc(100vh-80px)] overflow-y-auto">
                             <div className="bg-black/40 p-4 rounded-xl border border-white/10 retro-font">
                                 <div className="flex items-center justify-between mb-2"><span className="text-xs text-gray-400">Rau-Pithampur</span>{weather.desc.includes('Rain') ? <CloudRain className="w-5 h-5 text-blue-400" /> : <Sun className="w-5 h-5 text-yellow-400" />}</div>
@@ -565,6 +647,7 @@
                             </nav>
                         </aside>
                         
+                        {/* MAIN CONTENT VIEWS */}
                         <main className="flex-1 p-6 relative overflow-y-auto h-[calc(100vh-80px)]">
                             {view === 'map' && (<PixelEarth venues={VENUES} bookings={bookings} onVenueClick={setSelectedVenue} />)}
                             
@@ -579,6 +662,13 @@
                                 <div className="w-full h-full bg-[#1e293b]/95 border-4 border-white p-8 overflow-y-auto backdrop-blur-sm relative flex flex-col rounded-xl shadow-2xl">
                                     <div className="flex justify-between items-center mb-8 border-b-4 border-white pb-4"><h2 className="text-3xl text-yellow-400 retro-font">BOOKINGS DATABASE</h2><button onClick={() => setView('map')} className="text-gray-400 hover:text-white p-2 border-2 border-transparent hover:border-white transition-all"><ArrowLeft className="w-8 h-8" /></button></div>
                                     
+                                    {/* Global Filters */}
+                                    <div className="flex flex-wrap gap-4 mb-4 items-center bg-black/40 p-4 rounded border border-white/20">
+                                        <div className="relative flex-1 min-w-[200px]"><Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" /><input type="text" placeholder="Global Search..." className="filter-input pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
+                                        <select value={venueFilter} onChange={(e) => setVenueFilter(e.target.value)} className="filter-select"><option value="All">All Venues</option>{VENUES.map(v => <option key={v.id} value={v.name}>{v.name}</option>)}</select>
+                                        <label className="flex items-center gap-2 cursor-pointer select-none"><input type="checkbox" checked={challengeFilter} onChange={(e) => setChallengeFilter(e.target.checked)} className="accent-yellow-400 w-5 h-5" /><span className="text-sm retro-font text-yellow-400">OPEN CHALLENGE</span></label>
+                                    </div>
+
                                     <div className="retro-table-container flex-1">
                                         <table className="retro-table">
                                             <thead>
@@ -590,7 +680,7 @@
                                                     <th onClick={() => handleSort('user')} className="sort-header"><div className="sort-header-content">USER {sortColumn === 'user' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</div> <input type="text" placeholder="Filter..." className="table-filter-input" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('user', e.target.value)} /></th>
                                                     <th onClick={() => handleSort('email')} className="sort-header"><div className="sort-header-content">EMAIL {sortColumn === 'email' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</div> <input type="text" placeholder="Filter..." className="table-filter-input" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('email', e.target.value)} /></th>
                                                     <th onClick={() => handleSort('purpose')} className="sort-header"><div className="sort-header-content">PURPOSE {sortColumn === 'purpose' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</div> <input type="text" placeholder="Filter..." className="table-filter-input" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('purpose', e.target.value)} /></th>
-                                                    <th onClick={() => handleSort('challenge')} className="sort-header"><div className="sort-header-content">CHALLENGE {sortColumn === 'challenge' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</div> <select className="table-filter-input" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('challenge', e.target.value)}><option value="All">All</option><option value="yes">Yes</option><option value="no">No</option></select></th>
+                                                    <th onClick={() => handleSort('challenge')} className="sort-header"><div className="sort-header-content">CHALLENGE {sortColumn === 'challenge' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</div> <select className="table-filter-input" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('challenge', e.target.value)}><option value="">All</option><option value="yes">Yes</option><option value="no">No</option></select></th>
                                                     <th onClick={() => handleSort('bookedAt')} className="sort-header"><div className="sort-header-content">BOOKED AT {sortColumn === 'bookedAt' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</div></th>
                                                 </tr>
                                             </thead>
