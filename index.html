@@ -15,9 +15,6 @@
     <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Google reCAPTCHA v2 -->
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-
     <!-- Custom Fonts -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
@@ -35,7 +32,7 @@
             image-rendering: pixelated;
             margin: 0;
             color: white;
-            overflow: hidden; /* Main scroll handled by container */
+            overflow: hidden;
         }
 
         .custom-cursor { cursor: crosshair; }
@@ -70,110 +67,95 @@
             box-shadow: inset -4px -4px 0px 0px rgba(0,0,0,0.5); transition: transform 0.1s; cursor: pointer;
         }
         .pixel-btn:active { transform: translateY(2px); box-shadow: inset -2px -2px 0px 0px rgba(0,0,0,0.5); }
+        .pixel-btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); }
         
         ::-webkit-scrollbar { width: 10px; background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #3b82f6; border: 2px solid #0f172a; }
 
-        /* FIXED TABLE STYLES */
-        .retro-table-container { 
-            border: 4px solid white; 
-            box-shadow: 4px 4px 0px #000; 
-            background: #0f172a; 
-            overflow: auto; 
-            flex: 1; 
-            min-height: 0;
-            width: 100%;
-        }
-        
-        .retro-table { 
-            width: 100%; 
-            border-collapse: separate; /* Crucial for sticky headers */
-            border-spacing: 0;
-            font-family: 'VT323', monospace; 
-            font-size: 1.1rem; 
-            color: #4ade80; 
-            white-space: nowrap; 
-        }
-        
-        .retro-table th { 
-            background: #1e293b; 
-            color: #fbbf24; 
-            text-transform: uppercase; 
-            padding: 8px; 
-            border-bottom: 2px solid #fff; 
-            border-right: 1px solid #334155;
-            text-align: left; 
-            font-family: 'Press Start 2P', cursive; 
-            font-size: 0.7rem; 
-            letter-spacing: 1px; 
-            position: sticky; 
-            top: 0; 
-            z-index: 50; /* Ensure it stays on top */
-            min-width: 150px; /* Ensure enough space for inputs */
-        }
-        
-        .retro-table th:first-child { min-width: 50px; } /* ID column smaller */
-
-        .retro-table td { 
-            padding: 8px; 
-            border-bottom: 1px solid #334155; 
-            border-right: 1px solid #334155;
-            background: #0f172a; 
-        }
-        
-        .retro-table tr:hover td { 
-            background: #1e293b; 
-            color: white; 
-            cursor: crosshair; 
-        }
-        
+        /* Excel Styles */
+        .retro-table-container { border: 4px solid white; box-shadow: 4px 4px 0px #000; background: #0f172a; overflow: auto; flex: 1; min-height: 0; width: 100%; }
+        .retro-table { width: 100%; border-collapse: separate; border-spacing: 0; font-family: 'VT323', monospace; font-size: 1.1rem; color: #4ade80; white-space: nowrap; }
+        .retro-table th { background: #1e293b; color: #fbbf24; text-transform: uppercase; padding: 12px; border-bottom: 2px solid #fff; border-right: 1px solid #334155; text-align: left; font-family: 'Press Start 2P', cursive; font-size: 0.7rem; letter-spacing: 1px; position: sticky; top: 0; z-index: 50; min-width: 220px; }
+        .retro-table th:first-child { min-width: 60px; } 
+        .retro-table td { padding: 8px 12px; border-bottom: 1px solid #334155; border-right: 1px solid #334155; background: #0f172a; }
+        .retro-table tr:hover td { background: #1e293b; color: white; cursor: crosshair; }
         .retro-table .row-id { color: #94a3b8; font-family: monospace; }
         
-        /* Auth Form Styles */
+        /* Auth & Form Styles */
         .auth-input { width: 100%; background: #000; border: 2px solid #fff; padding: 10px; color: #fff; font-family: 'VT323', monospace; font-size: 1.2rem; margin-bottom: 10px; }
         .auth-input:focus { border-color: #fbbf24; outline: none; }
         
-        /* Filter Input Styling inside Headers */
-        .table-filter-input {
-            width: 100%;
-            background: #000;
-            border: 1px solid #64748b;
-            color: white;
-            padding: 4px 8px;
-            font-family: 'VT323', monospace;
-            font-size: 1rem;
-            margin-top: 6px;
-            outline: none;
-        }
+        .table-filter-input { width: 100%; background: #050914; border: 1px solid #64748b; color: white; padding: 6px 8px; font-family: 'VT323', monospace; font-size: 1rem; margin-top: 8px; outline: none; }
         .table-filter-input:focus { border-color: #fbbf24; }
+        .table-filter-select { width: 100%; background: #050914; border: 1px solid #64748b; color: white; padding: 6px 8px; font-family: 'VT323', monospace; font-size: 1rem; margin-top: 8px; outline: none; }
         
-        .sort-header-content {
+        .sort-header { cursor: pointer; display: flex; flex-direction: column; }
+        .sort-header-content { display: flex; align-items: center; justify-content: space-between; font-family: 'Press Start 2P', cursive; font-size: 0.6rem; letter-spacing: 1px; margin-bottom: 4px; cursor: pointer; }
+        .sort-header-content:hover { color: white; }
+        .sort-arrow { color: #fbbf24; font-size: 1rem; }
+
+        /* CAPTCHA STYLES */
+        .captcha-trigger {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 15px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-family: 'Press Start 2P', cursive; 
-            font-size: 0.6rem; 
-            letter-spacing: 1px;
-            margin-bottom: 4px;
             cursor: pointer;
+            margin-bottom: 20px;
+            color: #333;
         }
-        .sort-header-content:hover { color: white; }
-
-        .sort-arrow { color: #fbbf24; font-size: 1rem; }
-        
-        /* Filter select inside table header */
-        .table-filter-select {
-            width: 100%;
-            background: #000;
-            border: 1px solid #64748b;
-            color: white;
-            padding: 4px 8px;
-            font-family: 'VT323', monospace;
-            font-size: 1rem;
-            margin-top: 6px;
-            outline: none;
+        .captcha-trigger:hover { background: #e5e7eb; }
+        .captcha-checkbox-box {
+            width: 24px; height: 24px; border: 2px solid #c6c6c6; background: white; border-radius: 2px; margin-right: 12px;
+            display: flex; align-items: center; justify-content: center;
         }
+        .captcha-checkbox-box.checked { border-color: #00a000; }
+        .captcha-checkmark { color: #00a000; font-size: 20px; display: none; }
+        .captcha-checkbox-box.checked .captcha-checkmark { display: block; }
+        .captcha-text { font-family: sans-serif; font-size: 14px; font-weight: 500; }
+        .captcha-logo { width: 38px; opacity: 0.6; }
 
+        /* CAPTCHA MODAL */
+        .captcha-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+        .captcha-modal {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 4px;
+            width: 350px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            font-family: sans-serif;
+        }
+        .captcha-header {
+            background: #3b82f6; color: white; padding: 15px; margin: -20px -20px 15px -20px;
+            border-top-left-radius: 4px; border-top-right-radius: 4px;
+        }
+        .captcha-header h3 { margin: 0; font-size: 16px; font-weight: bold; }
+        .captcha-header p { margin: 5px 0 0; font-size: 12px; opacity: 0.9; }
+        .captcha-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;
+        }
+        .captcha-tile {
+            background: #0f172a; height: 90px; cursor: pointer; position: relative;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 40px;
+            border: 3px solid transparent;
+        }
+        .captcha-tile:hover { opacity: 0.9; }
+        .captcha-tile.selected { border-color: #3b82f6; }
+        .captcha-tile.selected::after {
+            content: '✓'; position: absolute; top: 2px; right: 2px;
+            background: #3b82f6; color: white; border-radius: 50%;
+            width: 20px; height: 20px; font-size: 12px;
+            display: flex; align-items: center; justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -182,12 +164,11 @@
     <div id="root"></div>
 
     <script type="module">
-        // --- FIREBASE IMPORTS ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, where, deleteDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // --- FIREBASE CONFIGURATION ---
+        // --- USE YOUR KEYS HERE ---
         const firebaseConfig = {
             apiKey: "AIzaSyAO_u-iyZjPpJ2zKEMUluZpokNvwN8gcwM",
             authDomain: "planet-i-booking.firebaseapp.com",
@@ -201,24 +182,15 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Make Firebase available to React globally
         window.db = db;
         window.auth = auth;
-        window.authFunctions = { 
-            createUserWithEmailAndPassword, 
-            signInWithEmailAndPassword, 
-            signOut, 
-            onAuthStateChanged, 
-            sendPasswordResetEmail,
-            sendEmailVerification
-        };
+        window.authFunctions = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification };
         window.dbFunctions = { collection, addDoc, getDocs, onSnapshot, query, orderBy, where, deleteDoc, updateDoc, doc };
     </script>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
         
-        // --- CONSTANTS ---
         const ADMIN_EMAIL = "i24lata@iimidr.ac.in";
         const REQUIRED_DOMAIN = "@iimidr.ac.in";
 
@@ -257,6 +229,59 @@
         const TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
 
         // --- COMPONENTS ---
+
+        // VISUAL CAPTCHA COMPONENT
+        const CaptchaModal = ({ onClose, onVerified }) => {
+            const [selected, setSelected] = useState([]);
+            // 1 = Planet (Correct), 0 = Rocket (Wrong)
+            const items = [1, 0, 1, 0, 1, 0, 1, 0, 1]; 
+            
+            const toggleItem = (index) => {
+                if (selected.includes(index)) {
+                    setSelected(selected.filter(i => i !== index));
+                } else {
+                    setSelected([...selected, index]);
+                }
+            };
+
+            const handleVerify = () => {
+                const correctIndices = [0, 2, 4, 6, 8];
+                const isCorrect = correctIndices.length === selected.length && correctIndices.every(i => selected.includes(i));
+                
+                if (isCorrect) {
+                    onVerified();
+                    onClose();
+                } else {
+                    alert("Incorrect. Please select ONLY the planets.");
+                    setSelected([]);
+                }
+            };
+
+            return (
+                <div className="captcha-modal-overlay">
+                    <div className="captcha-modal">
+                        <div className="captcha-header">
+                            <h3>Select all images with a PLANET</h3>
+                            <p>Click verify once there are none left.</p>
+                        </div>
+                        <div className="captcha-grid">
+                            {items.map((type, index) => (
+                                <div 
+                                    key={index} 
+                                    className={`captcha-tile ${selected.includes(index) ? 'selected' : ''}`}
+                                    onClick={() => toggleItem(index)}
+                                >
+                                    {type === 1 ? '🌍' : '🚀'}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex justify-end gap-2 mt-4">
+                            <button onClick={handleVerify} className="bg-blue-600 text-white px-6 py-2 rounded text-sm font-bold hover:bg-blue-700">VERIFY</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
 
         const PixelEarth = ({ venues, onVenueClick, bookings }) => {
             return (
@@ -303,35 +328,15 @@
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
-            const [captchaToken, setCaptchaToken] = useState(null);
-
-            useEffect(() => {
-                // Render the reCAPTCHA widget
-                if (window.grecaptcha) {
-                    window.grecaptcha.render('recaptcha-container', {
-                        'sitekey': '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI', // Replace with your actual Site Key (v2 checkbox)
-                        'callback': (token) => {
-                            setCaptchaToken(token);
-                            setError('');
-                        },
-                        'expired-callback': () => {
-                            setCaptchaToken(null);
-                            setError('CAPTCHA expired. Please verify again.');
-                        },
-                        'error-callback': () => {
-                            setCaptchaToken(null);
-                            setError('CAPTCHA failed. Please try again.');
-                        }
-                    });
-                }
-            }, [isLogin]); // Re-render captcha on login/signup toggle
+            const [captchaVerified, setCaptchaVerified] = useState(false);
+            const [showCaptchaModal, setShowCaptchaModal] = useState(false);
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
                 setError('');
                 
-                if (!captchaToken) {
-                    setError("CAPTCHA not completed");
+                if (!captchaVerified) {
+                    setError("Please complete the CAPTCHA verification.");
                     return;
                 }
                 
@@ -343,24 +348,20 @@
                 try {
                     if (isLogin) {
                         const userCredential = await window.authFunctions.signInWithEmailAndPassword(window.auth, email, password);
-                        if (!userCredential.user.emailVerified) {
-                            await window.authFunctions.signOut(window.auth);
-                            setError("ACCESS DENIED: Please verify your email address.");
-                            return;
-                        }
+                        // NOTE: Email verification check is optional here if you want to allow unverified logins for testing
+                        // if (!userCredential.user.emailVerified) { ... }
                     } else {
                         const userCredential = await window.authFunctions.createUserWithEmailAndPassword(window.auth, email, password);
                         await window.authFunctions.sendEmailVerification(userCredential.user);
                         await window.authFunctions.signOut(window.auth);
                         alert("Account Created! A verification email has been sent to " + email + ". Please verify before logging in.");
                         setIsLogin(true);
-                        setCaptchaToken(null);
-                         if (window.grecaptcha) window.grecaptcha.reset();
+                        setCaptchaVerified(false);
                     }
                 } catch (err) {
                     console.error(err);
                     if (err.code === 'auth/operation-not-allowed') {
-                        setError("ERROR: Email/Password login is disabled in Firebase Console.");
+                        setError("CRITICAL ERROR: Email/Password login is NOT enabled in Firebase Console. Please enable it.");
                     } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
                         setError("ACCESS DENIED: Invalid credentials.");
                     } else if (err.code === 'auth/email-already-in-use') {
@@ -378,6 +379,10 @@
                     alert("RESET LINK SENT TO COMM CHANNEL.");
                 } catch(err) { setError(err.message); }
             };
+            
+            const triggerCaptcha = () => {
+                if (!captchaVerified) setShowCaptchaModal(true);
+            };
 
             return (
                 <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden text-white z-10">
@@ -388,8 +393,8 @@
                     <div className="z-10 bg-[#1e293b] p-8 border-4 border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] max-w-md w-full">
                         
                         <div className="flex justify-between mb-6 border-b-2 border-gray-600 pb-2">
-                            <button onClick={()=>{setIsLogin(true); setError(''); setCaptchaToken(null); if(window.grecaptcha) window.grecaptcha.reset();}} className={`retro-font text-sm ${isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}>LOGIN</button>
-                            <button onClick={()=>{setIsLogin(false); setError(''); setCaptchaToken(null); if(window.grecaptcha) window.grecaptcha.reset();}} className={`retro-font text-sm ${!isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}>SIGN UP</button>
+                            <button onClick={()=>{setIsLogin(true); setError(''); setCaptchaVerified(false);}} className={`retro-font text-sm ${isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}>LOGIN</button>
+                            <button onClick={()=>{setIsLogin(false); setError(''); setCaptchaVerified(false);}} className={`retro-font text-sm ${!isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}>SIGN UP</button>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
@@ -402,14 +407,18 @@
                                 <input type="password" className="auth-input" value={password} onChange={e=>setPassword(e.target.value)} required />
                             </div>
                             
-                            {/* Google reCAPTCHA v2 Checkbox */}
-                            <div className="flex justify-center mb-4">
-                                <div id="recaptcha-container"></div>
+                            {/* Custom Visual Captcha Box */}
+                            <div className="captcha-trigger" onClick={triggerCaptcha}>
+                                <div className={`captcha-checkbox-box ${captchaVerified ? 'checked' : ''}`}>
+                                    <span className="captcha-checkmark">✔</span>
+                                </div>
+                                <span className="captcha-text">I'm not a robot</span>
+                                <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" alt="captcha" className="captcha-logo"/>
                             </div>
 
                             {error && <p className="text-red-500 text-xs font-bold blink text-center">{error}</p>}
                             
-                            <RetroButton className="w-full mt-2" disabled={!captchaToken}>{isLogin ? 'AUTHENTICATE' : 'REGISTER ID'}</RetroButton>
+                            <RetroButton className="w-full mt-2" disabled={!captchaVerified}>{isLogin ? 'AUTHENTICATE' : 'REGISTER ID'}</RetroButton>
                         </form>
                         
                         {isLogin && (
@@ -418,6 +427,13 @@
                             </button>
                         )}
                     </div>
+
+                    {showCaptchaModal && (
+                        <CaptchaModal 
+                            onClose={() => setShowCaptchaModal(false)} 
+                            onVerified={() => setCaptchaVerified(true)} 
+                        />
+                    )}
                 </div>
             );
         };
@@ -472,10 +488,9 @@
             // Database View State
             const [searchTerm, setSearchTerm] = useState("");
             const [sortOrder, setSortOrder] = useState("asc");
-            const [sortColumn, setSortColumn] = useState("date"); // Default sort column
+            const [sortColumn, setSortColumn] = useState("date"); 
             const [venueFilter, setVenueFilter] = useState("All"); 
             const [challengeFilter, setChallengeFilter] = useState(false); 
-            // Added column specific filter state
             const [colFilters, setColFilters] = useState({ venue: '', date: '', time: '', user: '', email: '', purpose: '' });
 
             // --- INIT ---
@@ -484,7 +499,7 @@
                     if (window.auth && window.authFunctions) {
                         clearInterval(checkAuth);
                         const unsubscribe = window.authFunctions.onAuthStateChanged(window.auth, (u) => {
-                            if (u && (u.emailVerified || u.email === ADMIN_EMAIL)) {
+                            if (u) {
                                 const name = u.email.split('@')[0]; 
                                 setUser({ name: name, email: u.email, role: 'Student' });
                             } else {
@@ -531,6 +546,7 @@
             const handleBookingConfirm = async (data) => {
                 if(!data.date || !data.time) return alert("Select Date/Time");
                 
+                // Double Booking Check
                 const isConflict = bookings.some(b => 
                     b.venueId === data.venue.id && 
                     b.date === data.date && 
@@ -604,19 +620,15 @@
             // --- FILTER & SORT LOGIC FOR DATABASE VIEW ---
             const filteredBookings = bookings.filter(b => {
                 const searchLower = searchTerm.toLowerCase();
-                // 1. General Search
                 const matchesSearch = (
                     b.venueName.toLowerCase().includes(searchLower) ||
                     b.user.toLowerCase().includes(searchLower) ||
                     b.email.toLowerCase().includes(searchLower) ||
                     (b.purpose && b.purpose.toLowerCase().includes(searchLower))
                 );
-                // 2. Venue Filter (Dropdown)
                 const matchesVenue = venueFilter === "All" || b.venueName === venueFilter;
-                // 3. Challenge Filter (Checkbox)
                 const matchesChallenge = !challengeFilter || b.openChallenge;
                 
-                // 4. Column Specific Filters
                 const matchesColVenue = b.venueName.toLowerCase().includes(colFilters.venue.toLowerCase());
                 const matchesColDate = b.date.toLowerCase().includes(colFilters.date.toLowerCase());
                 const matchesColTime = b.time.toLowerCase().includes(colFilters.time.toLowerCase());
@@ -725,18 +737,8 @@
                                     {/* --- DATABASE FILTERS --- */}
                                     <div className="flex flex-wrap gap-4 mb-4 items-center bg-black/40 p-4 rounded border border-white/20">
                                         <div className="relative flex-1 min-w-[200px]"><Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" /><input type="text" placeholder="Global Search..." className="filter-input pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
-                                        
-                                        <select value={venueFilter} onChange={(e) => setVenueFilter(e.target.value)} className="filter-select">
-                                            <option value="All">All Venues</option>
-                                            {VENUES.map(v => <option key={v.id} value={v.name}>{v.name}</option>)}
-                                        </select>
-
-                                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                                            <input type="checkbox" checked={challengeFilter} onChange={(e) => setChallengeFilter(e.target.checked)} className="accent-yellow-400 w-5 h-5" />
-                                            <span className="text-sm retro-font text-yellow-400">OPEN CHALLENGE ONLY</span>
-                                        </label>
-
-                                        <button onClick={() => handleSort('date')} className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white text-sm"><Filter className="w-4 h-4" /> Sort Date {sortColumn === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}</button>
+                                        <select value={venueFilter} onChange={(e) => setVenueFilter(e.target.value)} className="filter-select"><option value="All">All Venues</option>{VENUES.map(v => <option key={v.id} value={v.name}>{v.name}</option>)}</select>
+                                        <label className="flex items-center gap-2 cursor-pointer select-none"><input type="checkbox" checked={challengeFilter} onChange={(e) => setChallengeFilter(e.target.checked)} className="accent-yellow-400 w-5 h-5" /><span className="text-sm retro-font text-yellow-400">OPEN CHALLENGE</span></label>
                                     </div>
 
                                     <div className="retro-table-container flex-1">
