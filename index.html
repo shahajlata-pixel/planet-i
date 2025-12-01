@@ -67,7 +67,8 @@
             box-shadow: inset -4px -4px 0px 0px rgba(0,0,0,0.5); transition: transform 0.1s; cursor: pointer;
         }
         .pixel-btn:active { transform: translateY(2px); box-shadow: inset -2px -2px 0px 0px rgba(0,0,0,0.5); }
-        .pixel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        /* Visual disabled style, but we handle click logic in JS too */
+        .pixel-btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); }
         
         ::-webkit-scrollbar { width: 10px; background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #3b82f6; border: 2px solid #0f172a; }
@@ -104,6 +105,7 @@
             margin-bottom: 15px;
             color: #000;
             font-family: sans-serif;
+            cursor: pointer;
         }
         .captcha-label {
             display: flex;
@@ -120,6 +122,45 @@
             width: 32px;
             height: 32px;
             opacity: 0.7;
+        }
+
+        /* Captcha Grid */
+        .captcha-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        .captcha-tile {
+            width: 80px;
+            height: 80px;
+            background: #0f172a;
+            border: 2px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            cursor: pointer;
+            position: relative;
+        }
+        .captcha-tile.selected {
+            border-color: #3b82f6;
+            background: #1e3a8a;
+        }
+        .captcha-tile.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
@@ -148,6 +189,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // Make Firebase available to React globally
         window.db = db;
         window.auth = auth;
         window.authFunctions = { 
@@ -204,6 +246,59 @@
 
         // --- COMPONENTS ---
 
+        // CAPTCHA MODAL COMPONENT
+        const CaptchaModal = ({ onClose, onVerified }) => {
+            const [selected, setSelected] = useState([]);
+            
+            // 1 = Planet (Target), 0 = Rocket (Distractor)
+            const items = [1, 0, 1, 0, 1, 0, 1, 0, 1]; 
+            
+            const toggleItem = (index) => {
+                if (selected.includes(index)) {
+                    setSelected(selected.filter(i => i !== index));
+                } else {
+                    setSelected([...selected, index]);
+                }
+            };
+
+            const handleVerify = () => {
+                // User must select all indices that are '1' (Planets) and no '0's
+                const correctIndices = [0, 2, 4, 6, 8];
+                const isCorrect = correctIndices.every(i => selected.includes(i)) && selected.length === correctIndices.length;
+                
+                if (isCorrect) {
+                    onVerified();
+                    onClose();
+                } else {
+                    alert("Incorrect. Please select ONLY the planets.");
+                    setSelected([]);
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
+                    <div className="bg-[#1e293b] border-4 border-white p-6 max-w-xs w-full text-center shadow-2xl">
+                        <h3 className="text-white retro-font mb-4 text-sm">SELECT ALL PLANETS 🌍</h3>
+                        <div className="captcha-grid">
+                            {items.map((type, index) => (
+                                <div 
+                                    key={index} 
+                                    className={`captcha-tile ${selected.includes(index) ? 'selected' : ''}`}
+                                    onClick={() => toggleItem(index)}
+                                >
+                                    {type === 1 ? '🌍' : '🚀'}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                             <RetroButton onClick={onClose} variant="neutral" className="text-xs py-2">CANCEL</RetroButton>
+                             <RetroButton onClick={handleVerify} variant="primary" className="text-xs py-2">VERIFY</RetroButton>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const PixelEarth = ({ venues, onVenueClick, bookings }) => {
             return (
                 <div className="relative w-[600px] h-[600px] mx-auto animate-float select-none scale-90 md:scale-100">
@@ -250,6 +345,7 @@
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
             const [captchaVerified, setCaptchaVerified] = useState(false);
+            const [showCaptchaModal, setShowCaptchaModal] = useState(false);
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
@@ -325,14 +421,14 @@
                                 <input type="password" className="auth-input" value={password} onChange={e=>setPassword(e.target.value)} required />
                             </div>
                             
-                            {/* Custom Mock Captcha */}
-                            <div className="captcha-box">
+                            {/* Custom Captcha Trigger */}
+                            <div className="captcha-box" onClick={() => !captchaVerified && setShowCaptchaModal(true)}>
                                 <label className="captcha-label">
                                     <input 
                                         type="checkbox" 
                                         className="captcha-checkbox" 
                                         checked={captchaVerified}
-                                        onChange={(e) => setCaptchaVerified(e.target.checked)}
+                                        readOnly
                                     />
                                     I'm not a robot
                                 </label>
@@ -350,6 +446,13 @@
                             </button>
                         )}
                     </div>
+                    
+                    {showCaptchaModal && (
+                        <CaptchaModal 
+                            onClose={() => setShowCaptchaModal(false)} 
+                            onVerified={() => setCaptchaVerified(true)} 
+                        />
+                    )}
                 </div>
             );
         };
