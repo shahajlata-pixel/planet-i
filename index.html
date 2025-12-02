@@ -223,6 +223,7 @@
         const Search = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
         const Filter = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>;
 
+        // FIXED: Coordinates mapped strictly to green land areas
         const VENUES = [
             { id: 's1', name: 'Badminton Court', category: 'Sports', x: 32, y: 25 },
             { id: 's4', name: 'Cricket Cage', category: 'Sports', x: 35, y: 30 },
@@ -292,26 +293,46 @@
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
+            const recaptchaRef = useRef(null);
+
+            const renderCaptcha = () => {
+                if (window.grecaptcha && window.grecaptcha.render) {
+                    try {
+                        // Reset if exists
+                        const container = document.getElementById('recaptcha-container');
+                        if(container) container.innerHTML = '';
+                        
+                        window.grecaptcha.render('recaptcha-container', {
+                            'sitekey': '6LeNuh0sAAAAAG_t-Y5vgdUKBc319CTNjQPwq0pj', // REAL KEY
+                            'callback': () => setError(''),
+                            'expired-callback': () => setError('CAPTCHA expired. Please verify again.')
+                        });
+                    } catch(e) { console.log("Captcha render error", e); }
+                }
+            };
 
             useEffect(() => {
-                // Render the reCAPTCHA widget
-                if (window.grecaptcha) {
-                    window.grecaptcha.render('recaptcha-container', {
-                        'sitekey': '6LeNuh0sAAAAAG_t-Y5vgdUKBc319CTNjQPwq0pj', // Using your real key
-                        'callback': () => setError(''),
-                        'expired-callback': () => setError('CAPTCHA expired. Please verify again.')
-                    });
-                }
+                // Wait for script to load
+                const interval = setInterval(() => {
+                     if(window.grecaptcha) {
+                         renderCaptcha();
+                         clearInterval(interval);
+                     }
+                }, 500);
+                return () => clearInterval(interval);
             }, [isLogin]);
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
                 setError('');
                 
-                const captchaResponse = window.grecaptcha.getResponse();
+                const captchaResponse = window.grecaptcha ? window.grecaptcha.getResponse() : null;
                 if (!captchaResponse) return setError("Please complete the CAPTCHA.");
 
-                if (!isLogin && !email.endsWith(REQUIRED_DOMAIN)) return setError(`RESTRICTED ACCESS: Only ${REQUIRED_DOMAIN} emails are allowed.`);
+                if (!isLogin && !email.endsWith(REQUIRED_DOMAIN)) {
+                     if(window.grecaptcha) window.grecaptcha.reset();
+                     return setError(`RESTRICTED ACCESS: Only ${REQUIRED_DOMAIN} emails are allowed.`);
+                }
 
                 try {
                     if (isLogin) {
@@ -319,7 +340,7 @@
                         if (!cred.user.emailVerified) {
                             await window.authFunctions.signOut(window.auth);
                             setError("ACCESS DENIED: Please verify your email address.");
-                            window.grecaptcha.reset();
+                            if(window.grecaptcha) window.grecaptcha.reset();
                         }
                     } else {
                         const cred = await window.authFunctions.createUserWithEmailAndPassword(window.auth, email, password);
@@ -327,12 +348,11 @@
                         await window.authFunctions.signOut(window.auth);
                         alert("Account Created! Verify your email before logging in.");
                         setIsLogin(true); 
-                        window.grecaptcha.reset();
                     }
                 } catch (err) {
                     console.error(err);
                     setError(err.code === 'auth/operation-not-allowed' ? "Enable Email/Password in Firebase Console." : "Invalid Credentials.");
-                    window.grecaptcha.reset();
+                    if(window.grecaptcha) window.grecaptcha.reset();
                 }
             };
 
@@ -349,8 +369,8 @@
                     </div>
                     <div className="z-10 bg-[#1e293b] p-8 border-4 border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] max-w-md w-full">
                         <div className="flex justify-between mb-6 border-b-2 border-gray-600 pb-2">
-                            <button onClick={()=>{setIsLogin(true); setError(''); if(window.grecaptcha) window.grecaptcha.reset();}} className={`retro-font text-sm ${isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}>LOGIN</button>
-                            <button onClick={()=>{setIsLogin(false); setError(''); if(window.grecaptcha) window.grecaptcha.reset();}} className={`retro-font text-sm ${!isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}>SIGN UP</button>
+                            <button onClick={()=>{setIsLogin(true); setError('');}} className={`retro-font text-sm ${isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}>LOGIN</button>
+                            <button onClick={()=>{setIsLogin(false); setError('');}} className={`retro-font text-sm ${!isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}>SIGN UP</button>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div><label className="block text-xs text-gray-400 mb-1 retro-font">INSTITUTE ID</label><input type="email" className="auth-input" value={email} onChange={e=>setEmail(e.target.value)} required /></div>
@@ -417,7 +437,7 @@
             // Database View State
             const [sortOrder, setSortOrder] = useState("asc");
             const [sortColumn, setSortColumn] = useState("date"); 
-            const [colFilters, setColFilters] = useState({ venue: '', date: '', time: '', user: '', email: '', purpose: '', challenge: '' });
+            const [colFilters, setColFilters] = useState({ venue: '', date: '', time: '', user: '', email: '', purpose: '', challenge: 'All' });
 
             // --- INIT ---
             useEffect(() => {
@@ -434,6 +454,7 @@
                 }, 100);
 
                 const timer = setInterval(() => setTime(new Date()), 60000);
+                
                 const fetchWeather = async () => {
                     try {
                         const w = await fetch('https://api.open-meteo.com/v1/forecast?latitude=22.63&longitude=75.80&current=temperature_2m,weather_code');
@@ -448,15 +469,20 @@
                 return () => { clearInterval(checkAuth); clearInterval(timer); }
             }, []);
 
-            // --- FIRESTORE ---
+            // --- FIRESTORE REAL-TIME LISTENER ---
             useEffect(() => {
                 if (!user || !window.dbFunctions) return;
+                
                 const q = window.dbFunctions.query(window.dbFunctions.collection(window.db, "bookings"), window.dbFunctions.orderBy("timestamp", "desc"));
+                
                 const unsubscribe = window.dbFunctions.onSnapshot(q, (snapshot) => {
                     const loaded = [];
                     snapshot.forEach((doc) => loaded.push({ id: doc.id, ...doc.data() }));
                     setBookings(loaded);
+                }, (error) => {
+                    console.error("Firestore Error", error);
                 });
+
                 return () => unsubscribe();
             }, [user]);
 
@@ -519,7 +545,7 @@
                     b.user.toLowerCase().includes(colFilters.user.toLowerCase()) &&
                     b.email.toLowerCase().includes(colFilters.email.toLowerCase()) &&
                     (b.purpose || '').toLowerCase().includes(colFilters.purpose.toLowerCase()) &&
-                    (colFilters.challenge === '' || (colFilters.challenge === 'yes' ? b.openChallenge : colFilters.challenge === 'no' ? !b.openChallenge : false))
+                    (colFilters.challenge === 'All' || (colFilters.challenge === 'yes' ? b.openChallenge : colFilters.challenge === 'no' ? !b.openChallenge : false))
                 );
             }).sort((a, b) => {
                 const isAsc = sortOrder === 'asc';
