@@ -223,7 +223,7 @@
         const Search = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
         const Filter = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>;
 
-        // FIXED: Coordinates mapped strictly to green land areas
+        // VENUES (all on land)
         const VENUES = [
             { id: 's1', name: 'Badminton Court', category: 'Sports', x: 32, y: 25 },
             { id: 's4', name: 'Cricket Cage', category: 'Sports', x: 35, y: 30 },
@@ -243,15 +243,13 @@
 
         const TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
 
-        // --- COMPONENTS ---
-
         const PixelEarth = ({ venues, onVenueClick, bookings }) => {
             return (
                 <div className="relative w-[600px] h-[600px] mx-auto animate-float select-none scale-90 md:scale-100">
                     <div className="absolute inset-0 rounded-full bg-blue-600/20 blur-3xl"></div>
                     <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl relative z-10" shapeRendering="crispEdges">
                         <circle cx="50" cy="50" r="45" fill="#3b82f6" stroke="#1e3a8a" strokeWidth="1" />
-                        {/* Landmasses adjusted to match venue clusters - ALL ON LAND */}
+                        {/* Landmasses */}
                         <path d="M30,20 h10 v10 h-10 z" fill="#4ade80" /> 
                         <path d="M60,28 h20 v10 h-20 z" fill="#4ade80" /> 
                         <path d="M40,42 h20 v15 h-20 z" fill="#4ade80" /> 
@@ -265,9 +263,14 @@
                     {venues.map((venue) => {
                         const hasChallenge = bookings.some(b => b.venueId === venue.id && b.openChallenge);
                         return (
-                            <button key={venue.id} onClick={() => onVenueClick(venue)} style={{ top: `${venue.y}%`, left: `${venue.x}%` }} className="absolute transform -translate-x-1/2 -translate-y-1/2 group z-20 focus:outline-none">
+                            <button
+                                key={venue.id}
+                                onClick={() => onVenueClick(venue)}
+                                style={{ top: `${venue.y}%`, left: `${venue.x}%` }}
+                                className="absolute transform -translate-x-1/2 -translate-y-1/2 group z-20 focus:outline-none"
+                            >
                                 <div className={`flex flex-col items-center ${hasChallenge ? 'animate-glow' : ''}`}>
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                                         <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z" fill={hasChallenge ? '#fbbf24' : '#ef4444'} stroke="white" strokeWidth="2"/>
                                         <circle cx="12" cy="9" r="3" fill="white"/>
                                     </svg>
@@ -283,9 +286,18 @@
             );
         };
 
-        const RetroButton = ({ children, onClick, className = "", variant = "primary", disabled = false }) => {
+        const RetroButton = ({ children, onClick, className = "", variant = "primary", disabled = false, type = "submit" }) => {
             const colors = { primary: 'bg-blue-600 hover:bg-blue-500', danger: 'bg-red-600 hover:bg-red-500', success: 'bg-green-600 hover:bg-green-500', neutral: 'bg-gray-600 hover:bg-gray-500' };
-            return <button onClick={onClick} disabled={disabled} className={`${colors[variant]} text-white font-bold py-2 px-4 border-b-4 border-r-4 border-black active:border-0 active:mt-1 active:ml-1 uppercase tracking-wider font-retro text-sm transition-transform ${className} disabled:opacity-50 disabled:cursor-not-allowed`}>{children}</button>;
+            return (
+                <button
+                    type={type}
+                    onClick={onClick}
+                    disabled={disabled}
+                    className={`${colors[variant]} text-white font-bold py-2 px-4 border-b-4 border-r-4 border-black active:border-0 active:mt-1 active:ml-1 uppercase tracking-wider font-retro text-sm transition-transform ${className} disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                    {children}
+                </button>
+            );
         };
 
         const AuthScreen = ({ onLogin }) => {
@@ -293,117 +305,123 @@
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
-            const [captchaToken, setCaptchaToken] = useState(null);
-            const recaptchaRef = useRef(null);
+            const [captchaReady, setCaptchaReady] = useState(false);
+            const recaptchaRef = useRef(null); // widget ID
 
-            // Function to initialize reCAPTCHA
-            const renderCaptcha = () => {
-                if (window.grecaptcha && window.grecaptcha.render) {
-                    try {
-                        // Clear previous instance if any
-                        const container = document.getElementById('recaptcha-container');
-                        if(container) container.innerHTML = '';
-                        
-                        // Render new widget
-                        recaptchaRef.current = window.grecaptcha.render('recaptcha-container', {
-                            'sitekey': '6LeNuh0sAAAAAG_t-Y5vgdUKBc319CTNjQPwq0pj', // YOUR_REAL_RECAPTCHA_SITE_KEY
-                            'callback': (token) => {
-                                console.log("Captcha Success:", token);
-                                setCaptchaToken(token);
-                                setError('');
-                            },
-                            'expired-callback': () => {
-                                console.log("Captcha Expired");
-                                setCaptchaToken(null);
-                                setError('CAPTCHA expired. Please verify again.');
-                            },
-                            'error-callback': () => {
-                                console.log("Captcha Error");
-                                setCaptchaToken(null);
-                                setError('CAPTCHA failed. Please check your connection.');
-                            }
-                        });
-                    } catch(e) { console.log("Captcha render error", e); }
-                }
-            };
-
-            // Initial Render
+            // Render reCAPTCHA once
             useEffect(() => {
                 const interval = setInterval(() => {
-                     if(window.grecaptcha) {
-                         renderCaptcha();
-                         clearInterval(interval);
-                     }
-                }, 500);
+                    if (window.grecaptcha && window.grecaptcha.render && !recaptchaRef.current) {
+                        try {
+                            recaptchaRef.current = window.grecaptcha.render('recaptcha-container', {
+                                sitekey: '6LeNuh0sAAAAAG_t-Y5vgdUKBc319CTNjQPwq0pj', // your real site key
+                                callback: () => {
+                                    console.log("Captcha solved");
+                                    setError('');
+                                },
+                                'expired-callback': () => {
+                                    console.log("Captcha expired");
+                                    setError('CAPTCHA expired. Please verify again.');
+                                },
+                                'error-callback': () => {
+                                    console.log("Captcha error");
+                                    setError('CAPTCHA failed. Please check your connection.');
+                                }
+                            });
+                            setCaptchaReady(true);
+                            clearInterval(interval);
+                        } catch (e) {
+                            console.log("Captcha render error", e);
+                        }
+                    }
+                }, 300);
                 return () => clearInterval(interval);
-            }, [isLogin]); // Re-render on toggle to ensure widget is fresh
+            }, []);
+
+            // Reset captcha when switching between login/sign up
+            useEffect(() => {
+                if (window.grecaptcha && recaptchaRef.current !== null) {
+                    window.grecaptcha.reset(recaptchaRef.current);
+                    setError('');
+                }
+            }, [isLogin]);
+
+            const validateCaptcha = () => {
+                if (!window.grecaptcha || recaptchaRef.current === null) return false;
+                const token = window.grecaptcha.getResponse(recaptchaRef.current);
+                console.log("Captcha token from getResponse:", token);
+                return token && token.length > 0;
+            };
+
+            const resetCaptcha = () => {
+                if (window.grecaptcha && recaptchaRef.current !== null) {
+                    window.grecaptcha.reset(recaptchaRef.current);
+                }
+            };
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
                 setError('');
-                
-                console.log("Submitting form...");
-                console.log("Email:", email);
-                console.log("Captcha Token State:", captchaToken);
 
-                // 1. Check Captcha Token
-                if (!captchaToken) {
+                console.log("Submitting form with:", { email });
+
+                // 1. CAPTCHA
+                if (!validateCaptcha()) {
                     setError("Please complete the CAPTCHA.");
                     return;
                 }
-                
-                // 2. Domain Check
+
+                // 2. Domain restriction only for signup
                 if (!isLogin && !email.endsWith(REQUIRED_DOMAIN)) {
-                     if(window.grecaptcha) window.grecaptcha.reset(recaptchaRef.current);
-                     setCaptchaToken(null);
-                     return setError(`RESTRICTED ACCESS: Only ${REQUIRED_DOMAIN} emails are allowed.`);
+                    resetCaptcha();
+                    setError(`RESTRICTED ACCESS: Only ${REQUIRED_DOMAIN} emails are allowed.`);
+                    return;
                 }
 
-                // 3. Attempt Firebase Auth
                 try {
                     if (isLogin) {
-                        console.log("Attempting Login...");
+                        console.log("Attempting login...");
                         const cred = await window.authFunctions.signInWithEmailAndPassword(window.auth, email, password);
-                        console.log("Login Success:", cred);
-                        
-                        if (!cred.user.emailVerified) {
+                        console.log("Login success:", cred);
+
+                        if (!cred.user.emailVerified && cred.user.email !== ADMIN_EMAIL) {
                             await window.authFunctions.signOut(window.auth);
+                            resetCaptcha();
                             setError("ACCESS DENIED: Please verify your email address.");
-                            if(window.grecaptcha) window.grecaptcha.reset(recaptchaRef.current);
-                            setCaptchaToken(null);
+                            return;
                         }
+                        // Auth state listener in main app will pick this up
                     } else {
-                        console.log("Attempting Signup...");
+                        console.log("Attempting signup...");
                         const cred = await window.authFunctions.createUserWithEmailAndPassword(window.auth, email, password);
-                        console.log("Signup Success:", cred);
                         await window.authFunctions.sendEmailVerification(cred.user);
                         await window.authFunctions.signOut(window.auth);
                         alert("Account Created! Verify your email before logging in.");
-                        setIsLogin(true); 
-                        // Only reset AFTER success
-                        if(window.grecaptcha) window.grecaptcha.reset(recaptchaRef.current);
-                        setCaptchaToken(null);
+                        setIsLogin(true);
+                        resetCaptcha();
                     }
                 } catch (err) {
-                    console.error("Auth Error:", err);
-                    let msg = "System Error";
+                    console.error("Auth error:", err);
+                    let msg = "SYSTEM ERROR";
                     if (err.code === 'auth/operation-not-allowed') msg = "Enable Email/Password in Firebase Console.";
-                    else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') msg = "Invalid Credentials.";
+                    else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') msg = "ACCESS DENIED: Invalid credentials.";
                     else if (err.code === 'auth/user-not-found') msg = "User not found.";
                     else if (err.code === 'auth/email-already-in-use') msg = "Email already registered.";
                     else msg = err.message;
-                    
+
                     setError(msg);
-                    
-                    // Reset captcha on failure so user can try again
-                    if(window.grecaptcha) window.grecaptcha.reset(recaptchaRef.current);
-                    setCaptchaToken(null);
+                    resetCaptcha();
                 }
             };
 
             const handleReset = async () => {
                 if (!email) return setError("ENTER EMAIL TO RESET PASSWORD");
-                try { await window.authFunctions.sendPasswordResetEmail(window.auth, email); alert("RESET LINK SENT."); } catch(err) { setError(err.message); }
+                try {
+                    await window.authFunctions.sendPasswordResetEmail(window.auth, email);
+                    alert("RESET LINK SENT.");
+                } catch (err) {
+                    setError(err.message);
+                }
             };
 
             return (
@@ -414,19 +432,47 @@
                     </div>
                     <div className="z-10 bg-[#1e293b] p-8 border-4 border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] max-w-md w-full">
                         <div className="flex justify-between mb-6 border-b-2 border-gray-600 pb-2">
-                            <button onClick={()=>{setIsLogin(true); setError(''); setCaptchaToken(null);}} className={`retro-font text-sm ${isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}>LOGIN</button>
-                            <button onClick={()=>{setIsLogin(false); setError(''); setCaptchaToken(null);}} className={`retro-font text-sm ${!isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}>SIGN UP</button>
+                            <button
+                                onClick={() => { setIsLogin(true); setError(''); }}
+                                className={`retro-font text-sm ${isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                LOGIN
+                            </button>
+                            <button
+                                onClick={() => { setIsLogin(false); setError(''); }}
+                                className={`retro-font text-sm ${!isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                SIGN UP
+                            </button>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div><label className="block text-xs text-gray-400 mb-1 retro-font">INSTITUTE ID</label><input type="email" className="auth-input" value={email} onChange={e=>setEmail(e.target.value)} required /></div>
-                            <div><label className="block text-xs text-gray-400 mb-1 retro-font">PASSWORD</label><input type="password" className="auth-input" value={password} onChange={e=>setPassword(e.target.value)} required /></div>
-                            
-                            <div className="flex justify-center mb-4"><div id="recaptcha-container"></div></div>
+                            <div>
+                                <label className="block text-xs text-gray-400 mb-1 retro-font">INSTITUTE ID</label>
+                                <input type="email" className="auth-input" value={email} onChange={e => setEmail(e.target.value)} required />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-gray-400 mb-1 retro-font">PASSWORD</label>
+                                <input type="password" className="auth-input" value={password} onChange={e => setPassword(e.target.value)} required />
+                            </div>
 
-                            {error && <p className="text-red-500 text-xs font-bold blink text-center">{error}</p>}
-                            <RetroButton className="w-full mt-2">{isLogin ? 'AUTHENTICATE' : 'REGISTER ID'}</RetroButton>
+                            <div className="flex justify-center mb-4">
+                                <div id="recaptcha-container"></div>
+                            </div>
+
+                            {error && <p className="text-red-500 text-xs font-bold text-center">{error}</p>}
+
+                            <RetroButton className="w-full mt-2">
+                                {isLogin ? 'AUTHENTICATE' : 'REGISTER ID'}
+                            </RetroButton>
                         </form>
-                        {isLogin && <button onClick={handleReset} className="text-xs text-blue-400 mt-4 hover:text-white block mx-auto retro-font underline decoration-dotted">FORGOT PASSWORD?</button>}
+                        {isLogin && (
+                            <button
+                                onClick={handleReset}
+                                className="text-xs text-blue-400 mt-4 hover:text-white block mx-auto retro-font underline decoration-dotted"
+                            >
+                                FORGOT PASSWORD?
+                            </button>
+                        )}
                     </div>
                 </div>
             );
@@ -446,22 +492,92 @@
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 font-mono backdrop-blur-sm">
                     <div className="bg-[#1e293b] border-4 border-white text-white w-full max-w-lg shadow-[10px_10px_0px_0px_#000] animate-in zoom-in duration-200">
                         <div className="bg-blue-700 p-4 border-b-4 border-white flex justify-between items-center">
-                            <h2 className="text-lg text-white flex items-center gap-2 uppercase retro-font"><MapPin /> {bookingToEdit ? 'EDIT: ' : ''}{venue.name}</h2>
-                            <button onClick={onClose}><XIcon className="text-white hover:text-red-400" /></button>
+                            <h2 className="text-lg text-white flex items-center gap-2 uppercase retro-font">
+                                <MapPin /> {bookingToEdit ? 'EDIT: ' : ''}{venue.name}
+                            </h2>
+                            <button onClick={onClose}>
+                                <XIcon className="text-white hover:text-red-400" />
+                            </button>
                         </div>
                         <div className="p-6 space-y-6">
                             <div className="grid grid-cols-2 gap-4">
-                                <div><label className="block text-green-400 mb-2 uppercase text-xs retro-font">Date (Max {maxDays} Days)</label><input type="date" min={today} max={maxDateStr} className="w-full bg-black border-2 border-white p-2 text-white" value={date} onChange={e => setDate(e.target.value)} /></div>
-                                <div><label className="block text-green-400 mb-2 uppercase text-xs retro-font">Time Slot</label><select className="w-full bg-black border-2 border-white p-2 text-white h-[42px]" value={time} onChange={e => setTime(e.target.value)}><option value="">Select...</option>{TIME_SLOTS.map(t => (<option key={t} value={`${t} - ${parseInt(t)+1}:00`}>{t} - {parseInt(t)+1}:00</option>))}</select></div>
+                                <div>
+                                    <label className="block text-green-400 mb-2 uppercase text-xs retro-font">
+                                        Date (Max {maxDays} Days)
+                                    </label>
+                                    <input
+                                        type="date"
+                                        min={today}
+                                        max={maxDateStr}
+                                        className="w-full bg-black border-2 border-white p-2 text-white"
+                                        value={date}
+                                        onChange={e => setDate(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-green-400 mb-2 uppercase text-xs retro-font">Time Slot</label>
+                                    <select
+                                        className="w-full bg-black border-2 border-white p-2 text-white h-[42px]"
+                                        value={time}
+                                        onChange={e => setTime(e.target.value)}
+                                    >
+                                        <option value="">Select...</option>
+                                        {TIME_SLOTS.map(t => (
+                                            <option key={t} value={`${t} - ${parseInt(t) + 1}:00`}>
+                                                {t} - {parseInt(t) + 1}:00
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
-                            <div><label className="block text-green-400 mb-2 uppercase text-xs retro-font">Purpose / Event Name</label><input type="text" className="w-full bg-black border-2 border-white p-2 text-white" placeholder="e.g. Club Meeting" value={purpose} onChange={e => setPurpose(e.target.value)} /></div>
+                            <div>
+                                <label className="block text-green-400 mb-2 uppercase text-xs retro-font">
+                                    Purpose / Event Name
+                                </label>
+                                <input
+                                    type="text"
+                                    className="w-full bg-black border-2 border-white p-2 text-white"
+                                    placeholder="e.g. Club Meeting"
+                                    value={purpose}
+                                    onChange={e => setPurpose(e.target.value)}
+                                />
+                            </div>
                             {venue.category === 'Sports' && (
                                 <div className="border-2 border-yellow-600 bg-yellow-900/20 p-3 flex items-center justify-between">
-                                    <label className="text-yellow-400 uppercase text-xs font-bold retro-font flex items-center gap-2"><Swords /> Open Challenge?</label>
-                                    <button onClick={() => setOpenChallenge(!openChallenge)} className={`w-12 h-6 border-2 border-white flex items-center px-1 transition-colors ${openChallenge ? 'bg-green-500 justify-end' : 'bg-red-500 justify-start'}`}><div className={`w-4 h-4 bg-white border border-black ${openChallenge ? 'bg-green-500' : ''}`}></div></button>
+                                    <label className="text-yellow-400 uppercase text-xs font-bold retro-font flex items-center gap-2">
+                                        <Swords /> Open Challenge?
+                                    </label>
+                                    <button
+                                        onClick={() => setOpenChallenge(!openChallenge)}
+                                        className={`w-12 h-6 border-2 border-white flex items-center px-1 transition-colors ${
+                                            openChallenge ? 'bg-green-500 justify-end' : 'bg-red-500 justify-start'
+                                        }`}
+                                    >
+                                        <div
+                                            className={`w-4 h-4 bg-white border border-black ${
+                                                openChallenge ? 'bg-green-500' : ''
+                                            }`}
+                                        ></div>
+                                    </button>
                                 </div>
                             )}
-                            <RetroButton onClick={() => onConfirm({ venue, date, time, openChallenge, purpose, id: bookingToEdit?.id })} className="w-full mt-4" variant="success">{bookingToEdit ? 'UPDATE BOOKING' : 'CONFIRM BOOKING'}</RetroButton>
+                            <RetroButton
+                                onClick={() =>
+                                    onConfirm({
+                                        venue,
+                                        date,
+                                        time,
+                                        openChallenge,
+                                        purpose,
+                                        id: bookingToEdit?.id
+                                    })
+                                }
+                                className="w-full mt-4"
+                                variant="success"
+                                type="button"
+                            >
+                                {bookingToEdit ? 'UPDATE BOOKING' : 'CONFIRM BOOKING'}
+                            </RetroButton>
                         </div>
                     </div>
                 </div>
@@ -479,12 +595,10 @@
             const [aiInsight, setAiInsight] = useState("System Idle. Waiting for data...");
             const [expandedCat, setExpandedCat] = useState(null);
             
-            // Database View State
             const [sortOrder, setSortOrder] = useState("asc");
             const [sortColumn, setSortColumn] = useState("date"); 
-            const [colFilters, setColFilters] = useState({ venue: '', date: '', time: '', user: '', email: '', purpose: '', challenge: '' });
+            const [colFilters, setColFilters] = useState({ venue: '', date: '', time: '', user: '', email: '', purpose: '', challenge: '', bookedAt: '' });
 
-            // --- INIT ---
             useEffect(() => {
                 const checkAuth = setInterval(() => {
                     if (window.auth && window.authFunctions) {
@@ -513,7 +627,6 @@
                 return () => { clearInterval(checkAuth); clearInterval(timer); }
             }, []);
 
-            // --- FIRESTORE ---
             useEffect(() => {
                 if (!user || !window.dbFunctions) return;
                 const q = window.dbFunctions.query(window.dbFunctions.collection(window.db, "bookings"), window.dbFunctions.orderBy("timestamp", "desc"));
@@ -576,157 +689,382 @@
                 setColFilters(prev => ({ ...prev, [column]: value }));
             };
 
-            const filteredBookings = bookings.filter(b => {
-                return (
-                    b.venueName.toLowerCase().includes(colFilters.venue.toLowerCase()) &&
-                    b.date.toLowerCase().includes(colFilters.date.toLowerCase()) &&
-                    b.time.toLowerCase().includes(colFilters.time.toLowerCase()) &&
-                    b.user.toLowerCase().includes(colFilters.user.toLowerCase()) &&
-                    b.email.toLowerCase().includes(colFilters.email.toLowerCase()) &&
-                    (b.purpose || '').toLowerCase().includes(colFilters.purpose.toLowerCase()) &&
-                    (colFilters.challenge === '' || (colFilters.challenge === 'yes' ? b.openChallenge : colFilters.challenge === 'no' ? !b.openChallenge : false))
-                );
-            }).sort((a, b) => {
-                const isAsc = sortOrder === 'asc';
-                let compareA, compareB;
-                switch (sortColumn) {
-                    case 'venue': compareA = a.venueName; compareB = b.venueName; break;
-                    case 'user': compareA = a.user; compareB = b.user; break;
-                    case 'email': compareA = a.email; compareB = b.email; break;
-                    case 'purpose': compareA = a.purpose; compareB = b.purpose; break;
-                    case 'challenge': compareA = a.openChallenge; compareB = b.openChallenge; break;
-                    case 'time': compareA = a.time; compareB = b.time; break;
-                    case 'bookedAt': 
-                        compareA = (a.timestamp && a.timestamp.toDate) ? a.timestamp.toDate().getTime() : 0;
-                        compareB = (b.timestamp && b.timestamp.toDate) ? b.timestamp.toDate().getTime() : 0;
-                        break;
-                    case 'date':
-                    default: 
-                        const dateA = new Date(a.date); const dateB = new Date(b.date);
-                        return isAsc ? dateA - dateB : dateB - dateA;
-                }
-                if (typeof compareA === 'string') return isAsc ? compareA.localeCompare(compareB) : compareB.localeCompare(compareA);
-                if (isAsc) return compareA > compareB ? 1 : -1;
-                return compareB > compareA ? 1 : -1;
-            });
+            const filteredBookings = bookings
+                .filter(b => {
+                    const bookedAtStr = b.timestamp?.toDate ? b.timestamp.toDate().toLocaleTimeString() : '';
+                    return (
+                        b.venueName.toLowerCase().includes(colFilters.venue.toLowerCase()) &&
+                        b.date.toLowerCase().includes(colFilters.date.toLowerCase()) &&
+                        b.time.toLowerCase().includes(colFilters.time.toLowerCase()) &&
+                        b.user.toLowerCase().includes(colFilters.user.toLowerCase()) &&
+                        b.email.toLowerCase().includes(colFilters.email.toLowerCase()) &&
+                        (b.purpose || '').toLowerCase().includes(colFilters.purpose.toLowerCase()) &&
+                        (colFilters.challenge === '' ||
+                            (colFilters.challenge === 'yes' ? b.openChallenge : colFilters.challenge === 'no' ? !b.openChallenge : false)) &&
+                        bookedAtStr.toLowerCase().includes(colFilters.bookedAt.toLowerCase())
+                    );
+                })
+                .sort((a, b) => {
+                    const isAsc = sortOrder === 'asc';
+                    let compareA, compareB;
+                    switch (sortColumn) {
+                        case 'venue': compareA = a.venueName; compareB = b.venueName; break;
+                        case 'user': compareA = a.user; compareB = b.user; break;
+                        case 'email': compareA = a.email; compareB = b.email; break;
+                        case 'purpose': compareA = a.purpose; compareB = b.purpose; break;
+                        case 'challenge': compareA = a.openChallenge; compareB = b.openChallenge; break;
+                        case 'time': compareA = a.time; compareB = b.time; break;
+                        case 'bookedAt': 
+                            compareA = (a.timestamp && a.timestamp.toDate) ? a.timestamp.toDate().getTime() : 0;
+                            compareB = (b.timestamp && b.timestamp.toDate) ? b.timestamp.toDate().getTime() : 0;
+                            break;
+                        case 'date':
+                        default: 
+                            const dateA = new Date(a.date); const dateB = new Date(b.date);
+                            return isAsc ? dateA - dateB : dateB - dateA;
+                    }
+                    if (typeof compareA === 'string') return isAsc ? compareA.localeCompare(compareB) : compareB.localeCompare(compareA);
+                    if (isAsc) return compareA > compareB ? 1 : -1;
+                    return compareB > compareA ? 1 : -1;
+                });
 
             if (!user) return <AuthScreen onLogin={setUser} />;
 
             return (
                 <div className="min-h-screen flex flex-col relative custom-cursor overflow-x-hidden">
                     <header className="z-20 px-6 py-4 border-b border-white/10 bg-[#0f172a]/80 backdrop-blur-md flex justify-between items-center sticky top-0">
-                        <div className="flex items-center gap-4"><div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-500/20 retro-font">P</div><div><h1 className="font-bold tracking-wider text-lg retro-font text-white">PLANET-I</h1><p className="text-xs text-gray-400 flex items-center gap-2 retro-font"><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> System Operational</p></div></div>
-                        <div className="flex items-center gap-4"><div className="text-right hidden sm:block retro-font"><p className="text-sm font-semibold text-green-400">{user.name}</p><p className="text-xs text-gray-400">{user.role}</p></div><button onClick={() => window.authFunctions.signOut(window.auth)} className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-red-400 transition-colors"><LogOut /></button></div>
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-500/20 retro-font">
+                                P
+                            </div>
+                            <div>
+                                <h1 className="font-bold tracking-wider text-lg retro-font text-white">PLANET-I</h1>
+                                <p className="text-xs text-gray-400 flex items-center gap-2 retro-font">
+                                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> System Operational
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="text-right hidden sm:block retro-font">
+                                <p className="text-sm font-semibold text-green-400">{user.name}</p>
+                                <p className="text-xs text-gray-400">{user.role}</p>
+                            </div>
+                            <button
+                                onClick={() => window.authFunctions.signOut(window.auth)}
+                                className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-red-400 transition-colors"
+                            >
+                                <LogOut />
+                            </button>
+                        </div>
                     </header>
                     
                     <div className="flex-1 flex flex-col md:flex-row relative z-10 min-h-[calc(100vh-80px)]"> 
-                        {/* LEFT ASIDE MENU */}
                         <aside className="w-full md:w-72 p-6 flex flex-col gap-6 border-r border-white/10 bg-[#0f172a]/80 backdrop-blur-md sticky top-[80px] h-[calc(100vh-80px)] overflow-y-auto">
                             <div className="bg-black/40 p-4 rounded-xl border border-white/10 retro-font">
-                                <div className="flex items-center justify-between mb-2"><span className="text-xs text-gray-400">Rau-Pithampur</span>{weather.desc.includes('Rain') ? <CloudRain className="w-5 h-5 text-blue-400" /> : <Sun className="w-5 h-5 text-yellow-400" />}</div>
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs text-gray-400">Rau-Pithampur</span>
+                                    {weather.desc.includes('Rain') ? (
+                                        <CloudRain className="w-5 h-5 text-blue-400" />
+                                    ) : (
+                                        <Sun className="w-5 h-5 text-yellow-400" />
+                                    )}
+                                </div>
                                 <div className="text-2xl font-bold text-white">{weather.temp}°C</div>
                                 <div className="text-xs text-gray-400 mb-2">{weather.desc}</div>
-                                <div className="flex justify-between text-xs"><span className="text-green-400">AQI: {weather.aqi}</span><span className="text-blue-300">{time.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span></div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-green-400">AQI: {weather.aqi}</span>
+                                    <span className="text-blue-300">
+                                        {time.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                                    </span>
+                                </div>
                             </div>
                             <nav className="space-y-4 text-lg retro-font tracking-widest">
-                                <button onClick={() => setView('map')} className={`block w-full text-left p-2 rounded hover:bg-white/10 transition-colors ${view === 'map' ? 'text-yellow-400' : 'text-white'}`}>MAP</button>
-                                <button onClick={() => setView('bookings')} className={`block w-full text-left p-2 rounded hover:bg-white/10 transition-colors ${view === 'bookings' ? 'text-yellow-400' : 'text-white'}`}>MY BOOKINGS</button>
-                                {user.email === ADMIN_EMAIL && <button onClick={() => setView('database')} className={`block w-full text-left p-2 rounded hover:bg-white/10 transition-colors ${view === 'database' ? 'text-yellow-400' : 'text-white'}`}>DATABASE</button>}
+                                <button
+                                    onClick={() => setView('map')}
+                                    className={`block w-full text-left p-2 rounded hover:bg-white/10 transition-colors ${
+                                        view === 'map' ? 'text-yellow-400' : 'text-white'
+                                    }`}
+                                >
+                                    MAP
+                                </button>
+                                <button
+                                    onClick={() => setView('bookings')}
+                                    className={`block w-full text-left p-2 rounded hover:bg-white/10 transition-colors ${
+                                        view === 'bookings' ? 'text-yellow-400' : 'text-white'
+                                    }`}
+                                >
+                                    MY BOOKINGS
+                                </button>
+                                {user.email === ADMIN_EMAIL && (
+                                    <button
+                                        onClick={() => setView('database')}
+                                        className={`block w-full text-left p-2 rounded hover:bg-white/10 transition-colors ${
+                                            view === 'database' ? 'text-yellow-400' : 'text-white'
+                                        }`}
+                                    >
+                                        DATABASE
+                                    </button>
+                                )}
                                 <div className="h-px bg-white/20 my-4"></div>
                                 {['Sports', 'Admin', 'Auditorium'].map(cat => (
                                     <div key={cat}>
-                                        <button onClick={() => toggleCategory(cat)} className={`w-full text-left p-2 rounded hover:bg-white/10 transition-colors text-sm text-green-400 flex justify-between items-center ${expandedCat === cat ? 'bg-white/10' : ''}`}>{cat === 'Admin' ? 'ADMIN BLOCK' : cat.toUpperCase()}<ChevronDown className={`w-4 h-4 transition-transform ${expandedCat === cat ? 'rotate-180' : ''}`} /></button>
-                                        {expandedCat === cat && (<div className="ml-4 mt-2 space-y-1 border-l-2 border-white/20 pl-2">{getVenuesByCategory(cat).map(v => (<button key={v.id} onClick={() => setSelectedVenue(v)} className="block w-full text-left text-[10px] py-1 text-gray-400 hover:text-white hover:translate-x-1 transition-all">{v.name}</button>))}</div>)}
+                                        <button
+                                            onClick={() => toggleCategory(cat)}
+                                            className={`w-full text-left p-2 rounded hover:bg-white/10 transition-colors text-sm text-green-400 flex justify-between items-center ${
+                                                expandedCat === cat ? 'bg-white/10' : ''
+                                            }`}
+                                        >
+                                            {cat === 'Admin' ? 'ADMIN BLOCK' : cat.toUpperCase()}
+                                            <ChevronDown
+                                                className={`w-4 h-4 transition-transform ${
+                                                    expandedCat === cat ? 'rotate-180' : ''
+                                                }`}
+                                            />
+                                        </button>
+                                        {expandedCat === cat && (
+                                            <div className="ml-4 mt-2 space-y-1 border-l-2 border-white/20 pl-2">
+                                                {getVenuesByCategory(cat).map(v => (
+                                                    <button
+                                                        key={v.id}
+                                                        onClick={() => setSelectedVenue(v)}
+                                                        className="block w-full text-left text-[10px] py-1 text-gray-400 hover:text-white hover:translate-x-1 transition-all"
+                                                    >
+                                                        {v.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
-                                <button onClick={() => setView('heatmap')} className={`block w-full text-left p-2 rounded hover:bg-white/10 transition-colors text-sm mt-4 flex items-center gap-2 ${view === 'heatmap' ? 'text-red-400' : 'text-red-300'}`}><BarChart3 /> HEATMAP</button>
+                                <button
+                                    onClick={() => setView('heatmap')}
+                                    className={`block w-full text-left p-2 rounded hover:bg-white/10 transition-colors text-sm mt-4 flex items-center gap-2 ${
+                                        view === 'heatmap' ? 'text-red-400' : 'text-red-300'
+                                    }`}
+                                >
+                                    <BarChart3 /> HEATMAP
+                                </button>
                             </nav>
                         </aside>
                         
-                        {/* MAIN CONTENT VIEWS */}
                         <main className="flex-1 p-6 h-full overflow-y-auto">
-                            {view === 'map' && (<PixelEarth venues={VENUES} bookings={bookings} onVenueClick={setSelectedVenue} />)}
+                            {view === 'map' && (
+                                <PixelEarth venues={VENUES} bookings={bookings} onVenueClick={setSelectedVenue} />
+                            )}
                             
                             {view === 'bookings' && (
                                 <div className="w-full h-full bg-[#1e293b]/90 border-4 border-white p-8 overflow-y-auto backdrop-blur-sm relative flex flex-col rounded-xl shadow-2xl">
-                                    <div className="flex justify-between items-center mb-8 border-b-4 border-white pb-4"><h2 className="text-3xl text-yellow-400 retro-font">MY BOOKINGS</h2><button onClick={() => setView('map')} className="text-gray-400 hover:text-white p-2 border-2 border-transparent hover:border-white transition-all"><ArrowLeft className="w-8 h-8" /></button></div>
-                                    {bookings.filter(b => b.email === user.email).length === 0 ? (<div className="flex-1 flex items-center justify-center"><p className="text-gray-400 retro-font text-xl animate-pulse">NO ACTIVE QUESTS.</p></div>) : (<div className="grid gap-4 w-full">{bookings.filter(b => b.email === user.email).map(b => (<div key={b.id} className="bg-black/40 border-2 border-white p-6 flex justify-between items-center hover:bg-white/5 transition-colors"><div><div className="text-xl text-green-400 font-bold uppercase mb-2 retro-font">{b.venueName}</div><div className="text-md text-white font-mono">{b.date} @ {b.time}</div>{b.openChallenge && <div className="text-sm text-yellow-400 mt-2 animate-pulse">{'>'}{'>'} OPEN CHALLENGE ACTIVE</div>}</div><div className="flex gap-2"><button onClick={() => handleEdit(b)} className="bg-blue-500/20 p-2 rounded hover:bg-blue-500 text-blue-400 hover:text-white transition-colors"><EditIcon className="w-4 h-4"/></button><button onClick={() => handleCancel(b.id)} className="bg-red-500/20 p-2 rounded hover:bg-red-500 text-red-400 hover:text-white transition-colors"><XIcon className="w-4 h-4"/></button></div></div>))}</div>)}
+                                    <div className="flex justify-between items-center mb-8 border-b-4 border-white pb-4">
+                                        <h2 className="text-3xl text-yellow-400 retro-font">MY BOOKINGS</h2>
+                                        <button
+                                            onClick={() => setView('map')}
+                                            className="text-gray-400 hover:text-white p-2 border-2 border-transparent hover:border-white transition-all"
+                                        >
+                                            <ArrowLeft className="w-8 h-8" />
+                                        </button>
+                                    </div>
+                                    {bookings.filter(b => b.email === user.email).length === 0 ? (
+                                        <div className="flex-1 flex items-center justify-center">
+                                            <p className="text-gray-400 retro-font text-xl animate-pulse">NO ACTIVE QUESTS.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid gap-4 w-full">
+                                            {bookings
+                                                .filter(b => b.email === user.email)
+                                                .map(b => (
+                                                    <div
+                                                        key={b.id}
+                                                        className="bg-black/40 border-2 border-white p-6 flex justify-between items-center hover:bg-white/5 transition-colors"
+                                                    >
+                                                        <div>
+                                                            <div className="text-xl text-green-400 font-bold uppercase mb-2 retro-font">
+                                                                {b.venueName}
+                                                            </div>
+                                                            <div className="text-md text-white font-mono">
+                                                                {b.date} @ {b.time}
+                                                            </div>
+                                                            {b.openChallenge && (
+                                                                <div className="text-sm text-yellow-400 mt-2 animate-pulse">
+                                                                    {'>'}{'>'} OPEN CHALLENGE ACTIVE
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={() => handleEdit(b)}
+                                                                className="bg-blue-500/20 p-2 rounded hover:bg-blue-500 text-blue-400 hover:text-white transition-colors"
+                                                            >
+                                                                <EditIcon className="w-4 h-4" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleCancel(b.id)}
+                                                                className="bg-red-500/20 p-2 rounded hover:bg-red-500 text-red-400 hover:text-white transition-colors"
+                                                            >
+                                                                <XIcon className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                             
                             {view === 'database' && (
                                 <div className="w-full h-full bg-[#1e293b]/95 border-4 border-white p-8 overflow-y-auto backdrop-blur-sm relative flex flex-col rounded-xl shadow-2xl">
-                                    <div className="flex justify-between items-center mb-8 border-b-4 border-white pb-4"><h2 className="text-3xl text-yellow-400 retro-font">BOOKINGS DATABASE</h2><button onClick={() => setView('map')} className="text-gray-400 hover:text-white p-2 border-2 border-transparent hover:border-white transition-all"><ArrowLeft className="w-8 h-8" /></button></div>
+                                    <div className="flex justify-between items-center mb-8 border-b-4 border-white pb-4">
+                                        <h2 className="text-3xl text-yellow-400 retro-font">BOOKINGS DATABASE</h2>
+                                        <button
+                                            onClick={() => setView('map')}
+                                            className="text-gray-400 hover:text-white p-2 border-2 border-transparent hover:border-white transition-all"
+                                        >
+                                            <ArrowLeft className="w-8 h-8" />
+                                        </button>
+                                    </div>
                                     
                                     <div className="retro-table-container flex-1">
                                         <table className="retro-table">
                                             <thead>
                                                 <tr>
-                                                    <th class="id-col">#</th>
-                                                    <th className="sort-header">
+                                                    <th className="id-col">#</th>
+                                                    <th>
                                                         <div className="header-content">
-                                                            <div className="header-title" onClick={() => handleSort('venue')}>VENUE {sortColumn === 'venue' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</div> 
-                                                            <select className="col-filter-select" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('venue', e.target.value)}>
+                                                            <div className="header-title" onClick={() => handleSort('venue')}>
+                                                                VENUE {sortColumn === 'venue' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                            </div>
+                                                            <select
+                                                                className="col-filter-select"
+                                                                onClick={e => e.stopPropagation()}
+                                                                onChange={e => handleFilterChange('venue', e.target.value)}
+                                                            >
                                                                 <option value="">All Venues</option>
-                                                                {VENUES.map(v => <option key={v.id} value={v.name}>{v.name}</option>)}
+                                                                {VENUES.map(v => (
+                                                                    <option key={v.id} value={v.name}>
+                                                                        {v.name}
+                                                                    </option>
+                                                                ))}
                                                             </select>
                                                         </div>
                                                     </th>
-                                                    <th className="sort-header">
+                                                    <th>
                                                         <div className="header-content">
-                                                            <div className="header-title" onClick={() => handleSort('date')}>DATE {sortColumn === 'date' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</div> 
-                                                            <input type="text" placeholder="YYYY-MM-DD" className="col-filter-input" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('date', e.target.value)} />
+                                                            <div className="header-title" onClick={() => handleSort('date')}>
+                                                                DATE {sortColumn === 'date' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="YYYY-MM-DD"
+                                                                className="col-filter-input"
+                                                                onClick={e => e.stopPropagation()}
+                                                                onChange={e => handleFilterChange('date', e.target.value)}
+                                                            />
                                                         </div>
                                                     </th>
-                                                    <th className="sort-header">
+                                                    <th>
                                                         <div className="header-content">
-                                                            <div className="header-title" onClick={() => handleSort('time')}>TIME {sortColumn === 'time' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</div> 
-                                                            <input type="text" placeholder="Filter..." className="col-filter-input" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('time', e.target.value)} />
+                                                            <div className="header-title" onClick={() => handleSort('time')}>
+                                                                TIME {sortColumn === 'time' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Filter..."
+                                                                className="col-filter-input"
+                                                                onClick={e => e.stopPropagation()}
+                                                                onChange={e => handleFilterChange('time', e.target.value)}
+                                                            />
                                                         </div>
                                                     </th>
-                                                    <th className="sort-header">
+                                                    <th>
                                                         <div className="header-content">
-                                                            <div className="header-title" onClick={() => handleSort('user')}>USER {sortColumn === 'user' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</div> 
-                                                            <input type="text" placeholder="Filter..." className="col-filter-input" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('user', e.target.value)} />
+                                                            <div className="header-title" onClick={() => handleSort('user')}>
+                                                                USER {sortColumn === 'user' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Filter..."
+                                                                className="col-filter-input"
+                                                                onClick={e => e.stopPropagation()}
+                                                                onChange={e => handleFilterChange('user', e.target.value)}
+                                                            />
                                                         </div>
                                                     </th>
-                                                    <th className="sort-header">
+                                                    <th>
                                                         <div className="header-content">
-                                                            <div className="header-title" onClick={() => handleSort('email')}>EMAIL {sortColumn === 'email' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</div> 
-                                                            <input type="text" placeholder="Filter..." className="col-filter-input" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('email', e.target.value)} />
+                                                            <div className="header-title" onClick={() => handleSort('email')}>
+                                                                EMAIL {sortColumn === 'email' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Filter..."
+                                                                className="col-filter-input"
+                                                                onClick={e => e.stopPropagation()}
+                                                                onChange={e => handleFilterChange('email', e.target.value)}
+                                                            />
                                                         </div>
                                                     </th>
-                                                    <th className="sort-header">
+                                                    <th>
                                                         <div className="header-content">
-                                                            <div className="header-title" onClick={() => handleSort('purpose')}>PURPOSE {sortColumn === 'purpose' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</div> 
-                                                            <input type="text" placeholder="Filter..." className="col-filter-input" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('purpose', e.target.value)} />
+                                                            <div className="header-title" onClick={() => handleSort('purpose')}>
+                                                                PURPOSE {sortColumn === 'purpose' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Filter..."
+                                                                className="col-filter-input"
+                                                                onClick={e => e.stopPropagation()}
+                                                                onChange={e => handleFilterChange('purpose', e.target.value)}
+                                                            />
                                                         </div>
                                                     </th>
-                                                    <th className="sort-header">
+                                                    <th>
                                                         <div className="header-content">
-                                                            <div className="header-title" onClick={() => handleSort('challenge')}>CHALLENGE {sortColumn === 'challenge' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</div> 
-                                                            <select className="col-filter-select" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('challenge', e.target.value)}><option value="">All</option><option value="yes">Yes</option><option value="no">No</option></select>
+                                                            <div className="header-title" onClick={() => handleSort('challenge')}>
+                                                                CHALLENGE {sortColumn === 'challenge' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                            </div>
+                                                            <select
+                                                                className="col-filter-select"
+                                                                onClick={e => e.stopPropagation()}
+                                                                onChange={e => handleFilterChange('challenge', e.target.value)}
+                                                            >
+                                                                <option value="">All</option>
+                                                                <option value="yes">Yes</option>
+                                                                <option value="no">No</option>
+                                                            </select>
                                                         </div>
                                                     </th>
-                                                    <th onClick={() => handleSort('bookedAt')} className="sort-header">
+                                                    <th>
                                                         <div className="header-content">
-                                                            <div className="header-title">BOOKED AT {sortColumn === 'bookedAt' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}</div>
-                                                            <input type="text" placeholder="Filter..." className="col-filter-input" onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleFilterChange('bookedAt', e.target.value)} />
+                                                            <div className="header-title" onClick={() => handleSort('bookedAt')}>
+                                                                BOOKED AT {sortColumn === 'bookedAt' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Filter..."
+                                                                className="col-filter-input"
+                                                                onClick={e => e.stopPropagation()}
+                                                                onChange={e => handleFilterChange('bookedAt', e.target.value)}
+                                                            />
                                                         </div>
                                                     </th>
                                                 </tr>
                                             </thead>
-                                            <tbody>{filteredBookings.map((b, i) => (<tr key={b.id}>
-                                                <td className="row-id">{i+1}</td>
-                                                <td>{b.venueName}</td>
-                                                <td>{b.date}</td>
-                                                <td>{b.time}</td>
-                                                <td>{b.user}</td>
-                                                <td style={{textTransform:'lowercase'}}>{b.email}</td>
-                                                <td>{b.purpose}</td>
-                                                <td>{b.openChallenge ? 'YES' : 'NO'}</td>
-                                                <td>{b.timestamp?.toDate ? b.timestamp.toDate().toLocaleTimeString() : 'N/A'}</td>
-                                            </tr>))}</tbody>
+                                            <tbody>
+                                                {filteredBookings.map((b, i) => (
+                                                    <tr key={b.id}>
+                                                        <td className="row-id">{i + 1}</td>
+                                                        <td>{b.venueName}</td>
+                                                        <td>{b.date}</td>
+                                                        <td>{b.time}</td>
+                                                        <td>{b.user}</td>
+                                                        <td style={{ textTransform: 'lowercase' }}>{b.email}</td>
+                                                        <td>{b.purpose}</td>
+                                                        <td>{b.openChallenge ? 'YES' : 'NO'}</td>
+                                                        <td>
+                                                            {b.timestamp?.toDate ? b.timestamp.toDate().toLocaleTimeString() : 'N/A'}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
                                         </table>
                                     </div>
                                 </div>
@@ -734,14 +1072,77 @@
                             
                             {view === 'heatmap' && (
                                 <div className="w-full h-full bg-[#1e293b]/95 border-4 border-white p-8 overflow-y-auto backdrop-blur-sm relative flex flex-col rounded-xl shadow-2xl">
-                                    <div className="flex justify-between items-center mb-8 border-b-4 border-white pb-4"><h2 className="text-3xl text-red-400 retro-font">CAMPUS HEATMAP</h2><button onClick={() => setView('map')} className="text-gray-400 hover:text-white p-2 border-2 border-transparent hover:border-white transition-all"><ArrowLeft className="w-6 h-6" /></button></div>
-                                    <div className="bg-black border-2 border-purple-500 p-6 mb-8 text-sm font-mono text-purple-300 leading-relaxed shadow-[0_0_15px_rgba(168,85,247,0.3)]">{aiInsight}</div>
-                                    <div className="flex-1 w-full overflow-x-auto"><div className="min-w-[600px]"><div className="flex mb-4 ml-48">{TIME_SLOTS.map(t => (<div key={t} className="flex-1 text-center text-xs text-gray-400 -rotate-45 origin-bottom">{t}</div>))}</div><div className="space-y-3">{VENUES.map(v => (<div key={v.id} className="flex items-center gap-4"><span className="w-48 text-xs uppercase font-mono text-right truncate pr-4 text-gray-300">{v.name}</span><div className="flex-1 h-10 bg-black border border-white/20 flex relative group">{TIME_SLOTS.map((slot) => {const isBooked = bookings.some(b => b.venueId === v.id && b.time.startsWith(slot));return (<div key={slot} className={`flex-1 border-r border-white/10 transition-all hover:opacity-80 relative ${isBooked ? 'bg-red-500' : 'bg-transparent hover:bg-white/10'}`}><div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-1 text-[10px] bg-black border border-white px-1 pointer-events-none z-20 whitespace-nowrap text-white">{slot}</div></div>);})}</div></div>))}</div></div></div>
+                                    <div className="flex justify-between items-center mb-8 border-b-4 border-white pb-4">
+                                        <h2 className="text-3xl text-red-400 retro-font">CAMPUS HEATMAP</h2>
+                                        <button
+                                            onClick={() => setView('map')}
+                                            className="text-gray-400 hover:text-white p-2 border-2 border-transparent hover:border-white transition-all"
+                                        >
+                                            <ArrowLeft className="w-6 h-6" />
+                                        </button>
+                                    </div>
+                                    <div className="bg-black border-2 border-purple-500 p-6 mb-8 text-sm font-mono text-purple-300 leading-relaxed shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+                                        {aiInsight}
+                                    </div>
+                                    <div className="flex-1 w-full overflow-x-auto">
+                                        <div className="min-w-[600px]">
+                                            <div className="flex mb-4 ml-48">
+                                                {TIME_SLOTS.map(t => (
+                                                    <div
+                                                        key={t}
+                                                        className="flex-1 text-center text-xs text-gray-400 -rotate-45 origin-bottom"
+                                                    >
+                                                        {t}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="space-y-3">
+                                                {VENUES.map(v => (
+                                                    <div key={v.id} className="flex items-center gap-4">
+                                                        <span className="w-48 text-xs uppercase font-mono text-right truncate pr-4 text-gray-300">
+                                                            {v.name}
+                                                        </span>
+                                                        <div className="flex-1 h-10 bg-black border border-white/20 flex relative group">
+                                                            {TIME_SLOTS.map(slot => {
+                                                                const isBooked = bookings.some(
+                                                                    b => b.venueId === v.id && b.time.startsWith(slot)
+                                                                );
+                                                                return (
+                                                                    <div
+                                                                        key={slot}
+                                                                        className={`flex-1 border-r border-white/10 transition-all hover:opacity-80 relative ${
+                                                                            isBooked
+                                                                                ? 'bg-red-500'
+                                                                                : 'bg-transparent hover:bg.white/10'
+                                                                        }`}
+                                                                    >
+                                                                        <div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-1 text-[10px] bg-black border border-white px-1 pointer-events-none z-20 whitespace-nowrap text-white">
+                                                                            {slot}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </main>
                     </div>
-                    {(selectedVenue || editingBooking) && (<BookingModal venue={selectedVenue} bookingToEdit={editingBooking} onClose={() => { setSelectedVenue(null); setEditingBooking(null); }} onConfirm={handleBookingConfirm} />)}
+                    {(selectedVenue || editingBooking) && (
+                        <BookingModal
+                            venue={selectedVenue}
+                            bookingToEdit={editingBooking}
+                            onClose={() => {
+                                setSelectedVenue(null);
+                                setEditingBooking(null);
+                            }}
+                            onConfirm={handleBookingConfirm}
+                        />
+                    )}
                 </div>
             );
         };
@@ -759,7 +1160,12 @@
                 return () => clearInterval(checkFirebase);
             }, []);
 
-            if (!isLoaded) return <div className="flex items-center justify-center h-screen text-green-500 retro-font animate-pulse">INITIALIZING UPLINK...</div>;
+            if (!isLoaded)
+                return (
+                    <div className="flex items-center justify-center h-screen text-green-500 retro-font animate-pulse">
+                        INITIALIZING UPLINK...
+                    </div>
+                );
 
             return <PixelPlanetApp />;
         };
