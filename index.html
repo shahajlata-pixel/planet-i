@@ -330,7 +330,7 @@
             );
         };
 
-        // -------- AUTH SCREEN (unchanged behavior, working captcha) --------
+        // -------- AUTH SCREEN WITH DOMAIN + VERIFICATION + RESET --------
         const AuthScreen = ({ onLogin }) => {
             const [isLogin, setIsLogin] = useState(true);
             const [email, setEmail] = useState('');
@@ -338,6 +338,7 @@
             const [error, setError] = useState('');
             const recaptchaRef = useRef(null);
 
+            // Render reCAPTCHA
             useEffect(() => {
                 const interval = setInterval(() => {
                     if (window.grecaptcha && window.grecaptcha.render && !recaptchaRef.current) {
@@ -366,6 +367,7 @@
                 return () => clearInterval(interval);
             }, []);
 
+            // Reset captcha when switching login/sign-up
             useEffect(() => {
                 if (window.grecaptcha && recaptchaRef.current !== null) {
                     window.grecaptcha.reset(recaptchaRef.current);
@@ -386,6 +388,11 @@
                 }
             };
 
+            // Enforce domain for both login and signup (admin exempt)
+            const isAllowedEmail = (email) => {
+                return email === ADMIN_EMAIL || email.endsWith(REQUIRED_DOMAIN);
+            };
+
             const handleSubmit = async (e) => {
                 e.preventDefault();
                 setError('');
@@ -395,26 +402,28 @@
                     return;
                 }
 
-                if (!isLogin && !email.endsWith(REQUIRED_DOMAIN)) {
+                if (!isAllowedEmail(email)) {
                     resetCaptcha();
-                    setError(`RESTRICTED ACCESS: Only ${REQUIRED_DOMAIN} emails are allowed.`);
+                    setError(`RESTRICTED ACCESS: Only ${REQUIRED_DOMAIN} emails (or admin) are allowed.`);
                     return;
                 }
 
                 try {
                     if (isLogin) {
                         const cred = await window.authFunctions.signInWithEmailAndPassword(window.auth, email, password);
+                        // Block non-verified users (except admin)
                         if (!cred.user.emailVerified && cred.user.email !== ADMIN_EMAIL) {
                             await window.authFunctions.signOut(window.auth);
                             resetCaptcha();
-                            setError("ACCESS DENIED: Please verify your email address.");
+                            setError("ACCESS DENIED: Please verify your email address. Verification link has already been sent to your inbox.");
                             return;
                         }
                     } else {
                         const cred = await window.authFunctions.createUserWithEmailAndPassword(window.auth, email, password);
+                        // Send verification mail to verify that the email actually exists
                         await window.authFunctions.sendEmailVerification(cred.user);
                         await window.authFunctions.signOut(window.auth);
-                        alert("Account Created! Verify your email before logging in.");
+                        alert("Account Created! A verification email has been sent to your IIM Indore ID. Please verify before logging in.");
                         setIsLogin(true);
                         resetCaptcha();
                     }
@@ -423,7 +432,7 @@
                     let msg = "SYSTEM ERROR";
                     if (err.code === 'auth/operation-not-allowed') msg = "Enable Email/Password in Firebase Console.";
                     else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') msg = "ACCESS DENIED: Invalid credentials.";
-                    else if (err.code === 'auth/user-not-found') msg = "User not found.";
+                    else if (err.code === 'auth/user-not-found') msg = "User not found. Please sign up using your IIM Indore email.";
                     else if (err.code === 'auth/email-already-in-use') msg = "Email already registered.";
                     else msg = err.message;
 
@@ -433,10 +442,17 @@
             };
 
             const handleReset = async () => {
-                if (!email) return setError("ENTER EMAIL TO RESET PASSWORD");
+                if (!email) {
+                    setError("ENTER EMAIL TO RESET PASSWORD");
+                    return;
+                }
+                if (!isAllowedEmail(email)) {
+                    setError(`Password reset is only available for ${REQUIRED_DOMAIN} emails (or admin).`);
+                    return;
+                }
                 try {
                     await window.authFunctions.sendPasswordResetEmail(window.auth, email);
-                    alert("RESET LINK SENT.");
+                    alert("RESET LINK SENT to your registered IIM Indore email.");
                 } catch (err) {
                     setError(err.message);
                 }
@@ -510,7 +526,7 @@
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 font-mono backdrop-blur-sm">
                     <div className="bg-[#1e293b] border-4 border-white text-white w-full max-w-lg shadow-[10px_10px_0px_0px_#000] animate-in zoom-in duration-200">
                         <div className="bg-blue-700 p-4 border-b-4 border-white flex justify-between items-center">
-                            <h2 className="text-lg text-white flex items-center gap-2 uppercase retro-font">
+                            <h2 className="text-lg text.white flex items-center gap-2 uppercase retro-font">
                                 <MapPin /> {bookingToEdit ? 'EDIT: ' : ''}{venue.name}
                             </h2>
                             <button onClick={onClose}><XIcon className="text-white hover:text-red-400" /></button>
@@ -867,7 +883,7 @@
                             <nav className="space-y-4 text-lg retro-font tracking-widest">
                                 <button
                                     onClick={() => setView('map')}
-                                    className={`block w-full text-left p-2 rounded hover:bg.white/10 transition-colors ${
+                                    className={`block w-full text-left p-2 rounded hover:bg-white/10 transition-colors ${
                                         view === 'map' ? 'text-yellow-400' : 'text-white'
                                     }`}
                                 >
@@ -913,7 +929,7 @@
                                                     <button
                                                         key={v.id}
                                                         onClick={() => handleVenueClick(v)}
-                                                        className="block w-full text-left text-[10px] py-1 text-gray-400 hover:text.white hover:translate-x-1 transition-all"
+                                                        className="block w-full text-left text-[10px] py-1 text-gray-400 hover:text-white hover:translate-x-1 transition-all"
                                                     >
                                                         {v.name}
                                                     </button>
@@ -1207,7 +1223,7 @@
                                                                                 : 'bg-transparent hover:bg-white/10'
                                                                         }`}
                                                                     >
-                                                                        <div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-1 text-[10px] bg-black border border-white px-1 pointer-events-none z-20 whitespace-nowrap text-white">
+                                                                        <div className="opacity-0 group-hover:opacity-100 absolute bottom.full left-1/2 -translate-x-1/2 mb-1 text-[10px] bg-black border border-white px-1 pointer-events-none z-20 whitespace-nowrap text-white">
                                                                             {slot}
                                                                         </div>
                                                                     </div>
