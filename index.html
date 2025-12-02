@@ -293,26 +293,42 @@
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
+            const [captchaToken, setCaptchaToken] = useState(null);
             const recaptchaRef = useRef(null);
 
+            // Function to initialize reCAPTCHA
             const renderCaptcha = () => {
                 if (window.grecaptcha && window.grecaptcha.render) {
                     try {
-                        // Reset if exists
+                        // Clear previous instance if any
                         const container = document.getElementById('recaptcha-container');
                         if(container) container.innerHTML = '';
                         
-                        window.grecaptcha.render('recaptcha-container', {
-                            'sitekey': '6LeNuh0sAAAAAG_t-Y5vgdUKBc319CTNjQPwq0pj', // REAL KEY
-                            'callback': () => setError(''),
-                            'expired-callback': () => setError('CAPTCHA expired. Please verify again.')
+                        // Render new widget
+                        recaptchaRef.current = window.grecaptcha.render('recaptcha-container', {
+                            'sitekey': '6LeNuh0sAAAAAG_t-Y5vgdUKBc319CTNjQPwq0pj', // YOUR_REAL_RECAPTCHA_SITE_KEY
+                            'callback': (token) => {
+                                console.log("Captcha Success:", token);
+                                setCaptchaToken(token);
+                                setError('');
+                            },
+                            'expired-callback': () => {
+                                console.log("Captcha Expired");
+                                setCaptchaToken(null);
+                                setError('CAPTCHA expired. Please verify again.');
+                            },
+                            'error-callback': () => {
+                                console.log("Captcha Error");
+                                setCaptchaToken(null);
+                                setError('CAPTCHA failed. Please check your connection.');
+                            }
                         });
                     } catch(e) { console.log("Captcha render error", e); }
                 }
             };
 
+            // Initial Render
             useEffect(() => {
-                // Wait for script to load
                 const interval = setInterval(() => {
                      if(window.grecaptcha) {
                          renderCaptcha();
@@ -320,39 +336,68 @@
                      }
                 }, 500);
                 return () => clearInterval(interval);
-            }, [isLogin]);
+            }, [isLogin]); // Re-render on toggle to ensure widget is fresh
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
                 setError('');
                 
-                const captchaResponse = window.grecaptcha ? window.grecaptcha.getResponse() : null;
-                if (!captchaResponse) return setError("Please complete the CAPTCHA.");
+                console.log("Submitting form...");
+                console.log("Email:", email);
+                console.log("Captcha Token State:", captchaToken);
 
+                // 1. Check Captcha Token
+                if (!captchaToken) {
+                    setError("Please complete the CAPTCHA.");
+                    return;
+                }
+                
+                // 2. Domain Check
                 if (!isLogin && !email.endsWith(REQUIRED_DOMAIN)) {
-                     if(window.grecaptcha) window.grecaptcha.reset();
+                     if(window.grecaptcha) window.grecaptcha.reset(recaptchaRef.current);
+                     setCaptchaToken(null);
                      return setError(`RESTRICTED ACCESS: Only ${REQUIRED_DOMAIN} emails are allowed.`);
                 }
 
+                // 3. Attempt Firebase Auth
                 try {
                     if (isLogin) {
+                        console.log("Attempting Login...");
                         const cred = await window.authFunctions.signInWithEmailAndPassword(window.auth, email, password);
+                        console.log("Login Success:", cred);
+                        
                         if (!cred.user.emailVerified) {
                             await window.authFunctions.signOut(window.auth);
                             setError("ACCESS DENIED: Please verify your email address.");
-                            if(window.grecaptcha) window.grecaptcha.reset();
+                            if(window.grecaptcha) window.grecaptcha.reset(recaptchaRef.current);
+                            setCaptchaToken(null);
                         }
                     } else {
+                        console.log("Attempting Signup...");
                         const cred = await window.authFunctions.createUserWithEmailAndPassword(window.auth, email, password);
+                        console.log("Signup Success:", cred);
                         await window.authFunctions.sendEmailVerification(cred.user);
                         await window.authFunctions.signOut(window.auth);
                         alert("Account Created! Verify your email before logging in.");
                         setIsLogin(true); 
+                        // Only reset AFTER success
+                        if(window.grecaptcha) window.grecaptcha.reset(recaptchaRef.current);
+                        setCaptchaToken(null);
                     }
                 } catch (err) {
-                    console.error(err);
-                    setError(err.code === 'auth/operation-not-allowed' ? "Enable Email/Password in Firebase Console." : "Invalid Credentials.");
-                    if(window.grecaptcha) window.grecaptcha.reset();
+                    console.error("Auth Error:", err);
+                    let msg = "System Error";
+                    if (err.code === 'auth/operation-not-allowed') msg = "Enable Email/Password in Firebase Console.";
+                    else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') msg = "Invalid Credentials.";
+                    else if (err.code === 'auth/user-not-found') msg = "User not found.";
+                    else if (err.code === 'auth/email-already-in-use') msg = "Email already registered.";
+                    else msg = err.message;
+                    
+                    setError(msg);
+                    
+                    // Reset captcha on failure so user can try again
+                    if(window.grecaptcha) window.grecaptcha.reset(recaptchaRef.current);
+                    setCaptchaToken(null);
                 }
             };
 
@@ -369,8 +414,8 @@
                     </div>
                     <div className="z-10 bg-[#1e293b] p-8 border-4 border-white shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] max-w-md w-full">
                         <div className="flex justify-between mb-6 border-b-2 border-gray-600 pb-2">
-                            <button onClick={()=>{setIsLogin(true); setError('');}} className={`retro-font text-sm ${isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}>LOGIN</button>
-                            <button onClick={()=>{setIsLogin(false); setError('');}} className={`retro-font text-sm ${!isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}>SIGN UP</button>
+                            <button onClick={()=>{setIsLogin(true); setError(''); setCaptchaToken(null);}} className={`retro-font text-sm ${isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}>LOGIN</button>
+                            <button onClick={()=>{setIsLogin(false); setError(''); setCaptchaToken(null);}} className={`retro-font text-sm ${!isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}>SIGN UP</button>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div><label className="block text-xs text-gray-400 mb-1 retro-font">INSTITUTE ID</label><input type="email" className="auth-input" value={email} onChange={e=>setEmail(e.target.value)} required /></div>
@@ -437,7 +482,7 @@
             // Database View State
             const [sortOrder, setSortOrder] = useState("asc");
             const [sortColumn, setSortColumn] = useState("date"); 
-            const [colFilters, setColFilters] = useState({ venue: '', date: '', time: '', user: '', email: '', purpose: '', challenge: 'All' });
+            const [colFilters, setColFilters] = useState({ venue: '', date: '', time: '', user: '', email: '', purpose: '', challenge: '' });
 
             // --- INIT ---
             useEffect(() => {
@@ -454,7 +499,6 @@
                 }, 100);
 
                 const timer = setInterval(() => setTime(new Date()), 60000);
-                
                 const fetchWeather = async () => {
                     try {
                         const w = await fetch('https://api.open-meteo.com/v1/forecast?latitude=22.63&longitude=75.80&current=temperature_2m,weather_code');
@@ -469,20 +513,15 @@
                 return () => { clearInterval(checkAuth); clearInterval(timer); }
             }, []);
 
-            // --- FIRESTORE REAL-TIME LISTENER ---
+            // --- FIRESTORE ---
             useEffect(() => {
                 if (!user || !window.dbFunctions) return;
-                
                 const q = window.dbFunctions.query(window.dbFunctions.collection(window.db, "bookings"), window.dbFunctions.orderBy("timestamp", "desc"));
-                
                 const unsubscribe = window.dbFunctions.onSnapshot(q, (snapshot) => {
                     const loaded = [];
                     snapshot.forEach((doc) => loaded.push({ id: doc.id, ...doc.data() }));
                     setBookings(loaded);
-                }, (error) => {
-                    console.error("Firestore Error", error);
                 });
-
                 return () => unsubscribe();
             }, [user]);
 
@@ -545,7 +584,7 @@
                     b.user.toLowerCase().includes(colFilters.user.toLowerCase()) &&
                     b.email.toLowerCase().includes(colFilters.email.toLowerCase()) &&
                     (b.purpose || '').toLowerCase().includes(colFilters.purpose.toLowerCase()) &&
-                    (colFilters.challenge === 'All' || (colFilters.challenge === 'yes' ? b.openChallenge : colFilters.challenge === 'no' ? !b.openChallenge : false))
+                    (colFilters.challenge === '' || (colFilters.challenge === 'yes' ? b.openChallenge : colFilters.challenge === 'no' ? !b.openChallenge : false))
                 );
             }).sort((a, b) => {
                 const isAsc = sortOrder === 'asc';
