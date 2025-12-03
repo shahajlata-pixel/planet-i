@@ -259,7 +259,11 @@
         function getBookingInterval(booking) {
             if (!booking || !booking.date || !booking.time) return null;
             try {
-                const [startStrRaw, endStrRaw] = booking.time.split('-');
+                const parts = booking.time.split('-');
+                if (parts.length < 2) return null; // Safety check
+                
+                const startStrRaw = parts[0];
+                const endStrRaw = parts[1];
                 if (!startStrRaw || !endStrRaw) return null;
                 const startStr = startStrRaw.trim();
                 const endStr = endStrRaw.trim();
@@ -273,7 +277,7 @@
 
                 return { start, end };
             } catch (e) {
-                console.log("Interval parse error", e, booking);
+                console.warn("Interval parse error", e, booking);
                 return null;
             }
         }
@@ -437,7 +441,8 @@
                     } else {
                         const cred = await window.authFunctions.createUserWithEmailAndPassword(window.auth, email, password);
                         const name = email.split('@')[0];
-                        const userDoc = window.dbFunctions.doc(window.db, "users", cred.user.uid);
+                        // FIX: Changed "users" to "userProfiles" to match security rules
+                        const userDoc = window.dbFunctions.doc(window.db, "userProfiles", cred.user.uid);
                         await window.dbFunctions.setDoc(userDoc, { email, name, phone: phone || '' });
                         await window.authFunctions.sendEmailVerification(cred.user);
                         await window.authFunctions.signOut(window.auth);
@@ -452,6 +457,7 @@
                     else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') msg = "ACCESS DENIED: Invalid credentials.";
                     else if (err.code === 'auth/user-not-found') msg = "User not found. Please sign up.";
                     else if (err.code === 'auth/email-already-in-use') msg = "Email already registered.";
+                    else if (err.code === 'permission-denied') msg = "Database Permission Denied. Check Rules.";
                     else msg = err.message;
 
                     setError(msg);
@@ -773,8 +779,15 @@
         const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
           const [isOpen, setIsOpen] = useState(false);
 
-          /* FIX APPLIED HERE: Replaced placeholder comment with actual filtering logic */
-          const upcoming = bookings.filter(b => b.openChallenge && (isChallengeActive(b, now) || isChallengeUpcoming(b, now)));
+          // SAFEGUARD: filter out bad data that causes crashes
+          const upcoming = bookings.filter(b => {
+             if (!b.openChallenge) return false;
+             // Safety check: if date/time is missing, getBookingInterval returns null
+             const interval = getBookingInterval(b);
+             if (!interval) return false;
+             
+             return isChallengeActive(b, now) || isChallengeUpcoming(b, now);
+          });
 
           if (!isOpen) {
             // Collapsed state: only show swords button when there is at least one upcoming
@@ -852,7 +865,8 @@
                                     const name = u.email.split('@')[0];
                                     let phone = '';
                                     try {
-                                        const userDocRef = window.dbFunctions.doc(window.db, "users", u.uid);
+                                        // FIX: Changed "users" to "userProfiles" to match security rules
+                                        const userDocRef = window.dbFunctions.doc(window.db, "userProfiles", u.uid);
                                         const snap = await window.dbFunctions.getDoc(userDocRef);
                                         if (snap.exists()) {
                                             const data = snap.data();
@@ -861,7 +875,7 @@
                                             await window.dbFunctions.setDoc(userDocRef, { email: u.email, name, phone: '' });
                                         }
                                     } catch (e) {
-                                        console.log("Profile load error", e);
+                                        console.warn("Profile load error (Permission?)", e);
                                     }
                                     setUser({ name, email: u.email, role: 'Student', phone });
                                 } else {
@@ -978,9 +992,13 @@
 
             /* VENUE CLICK: if active challenge => challenge modal; else booking modal */
             const handleVenueClick = (venue) => {
-                const activeChallenges = bookings.filter(
-                    b => b.venueId === venue.id && isChallengeActive(b, time)
-                );
+                const activeChallenges = bookings.filter(b => {
+                    if (!b.venueId === venue.id) return false;
+                    const interval = getBookingInterval(b);
+                    if (!interval) return false;
+                    return isChallengeActive(b, time);
+                });
+
                 if (activeChallenges.length > 0) {
                     setChallengeInfo({ venue, challenges: activeChallenges });
                 } else {
@@ -1041,7 +1059,8 @@
                 const current = window.auth.currentUser;
                 if (!current) return;
                 try {
-                    const userDocRef = window.dbFunctions.doc(window.db, "users", current.uid);
+                    // FIX: Changed "users" to "userProfiles"
+                    const userDocRef = window.dbFunctions.doc(window.db, "userProfiles", current.uid);
                     await window.dbFunctions.setDoc(userDocRef, { phone: newPhone }, { merge: true });
                     setUser(prev => ({ ...prev, phone: newPhone }));
                     alert("Phone updated.");
@@ -1581,17 +1600,21 @@
                             currentUser={user}
                             onClose={() => setChallengeInfo(null)}
                             onBook={async () => {
+                              // FIX: Use userProfiles here too if needed
                               const booking = challengeInfo.challenges[0];
 
                               const profileSnap = await window.dbFunctions.getDocs(
                                 window.dbFunctions.query(
                                   window.dbFunctions.collection(window.db, "userProfiles"),
-                                  window.dbFunctions.where("uid", "==", user.uid)
+                                  window.dbFunctions.where("uid", "==", user.uid) // Note: uid field must exist in doc, or query by doc ID
                                 )
                               );
+                              // Note: Usually doc ID IS the uid. So:
+                              const profileDocRef = window.dbFunctions.doc(window.db, "userProfiles", user.uid);
+                              const profileSnapDirect = await window.dbFunctions.getDoc(profileDocRef);
 
-                              const userProfile = profileSnap.docs.length
-                                ? profileSnap.docs[0].data()
+                              const userProfile = profileSnapDirect.exists()
+                                ? profileSnapDirect.data()
                                 : {};
 
                               await window.dbFunctions.addDoc(
@@ -1603,12 +1626,12 @@
                                   date: booking.date,
                                   time: booking.time,
 
-                                  bookingOwnerUid: booking.userUid,
+                                  bookingOwnerUid: booking.userUid || "", // Handle missing field
                                   hostName: booking.user,
                                   hostEmail: booking.email,
                                   hostPhone: booking.userPhone || null,
 
-                                  challengerUid: user.uid,
+                                  challengerUid: user.uid, // This matches the RULE for challengerUid
                                   challengerName: user.name,
                                   challengerEmail: user.email,
                                   challengerPhone: userProfile.phone || null,
