@@ -777,63 +777,51 @@
         };
 
         /* UPCOMING CHALLENGES PANEL (BOTTOM RIGHT, OPTION-2 FRIENDLY) */
-        const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
-            const upcoming = bookings
-                .filter(b => b.openChallenge)
-                .map(b => ({ booking: b, interval: getBookingInterval(b) }))
-                .filter(x => x.interval && x.interval.end >= now)
-                .sort((a, b) => a.interval.start - b.interval.start)
-                .slice(0, 6);
+const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
+  const [isOpen, setIsOpen] = useState(false);
 
-            return (
-                <div className="absolute bottom-4 right-4 w-80 bg-black/80 border-2 border-yellow-400 shadow-[6px_6px_0_#000] p-3 text-xs font-mono z-30">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                            <Swords className="w-4 h-4 text-yellow-300" />
-                            <span className="text-[10px] text-yellow-300 uppercase retro-font">
-                                UPCOMING OPEN CHALLENGES
-                            </span>
-                        </div>
-                        <Sparkles className="w-4 h-4 text-white" />
-                    </div>
-                    {upcoming.length === 0 ? (
-                        <p className="text-[10px] text-gray-400">No current or upcoming open challenges.</p>
-                    ) : (
-                        <div className="max-h-56 overflow-y-auto space-y-2">
-                            {upcoming.map(({ booking }) => {
-                                const venue = VENUES.find(v => v.id === booking.venueId);
-                                const venueName = venue ? venue.name : booking.venueName;
-                                return (
-                                    <button
-                                        key={booking.id}
-                                        onClick={() => {
-                                            const v = venue || { id: booking.venueId, name: booking.venueName, category: 'Sports' };
-                                            onSelect(v, [booking]);
-                                        }}
-                                        className="w-full text-left bg-[#0b1120] border border-white/30 px-2 py-2 hover:bg-white/10 transition-colors"
-                                    >
-                                        <div className="flex justify-between">
-                                            <span className="text-[10px] text-green-400 uppercase truncate mr-2">
-                                                {venueName}
-                                            </span>
-                                            <span className="text-[10px] text-gray-300">
-                                                {booking.date}
-                                            </span>
-                                        </div>
-                                        <div className="text-[10px] text-yellow-300 mt-1">
-                                            {booking.time}
-                                        </div>
-                                        <div className="text-[9px] text-gray-400 lowercase mt-1 truncate">
-                                            by {booking.user} ({booking.email})
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
-            );
-        };
+  const upcoming = /* your existing filter for openChallenge + future/active */;
+
+  if (!isOpen) {
+    // Collapsed state: only show swords button when there is at least one upcoming
+    if (upcoming.length === 0) return null;
+
+    return (
+      <button
+        className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-black/70
+                   border-2 border-yellow-400 flex items-center justify-center
+                   shadow-[4px_4px_0_#000]"
+        onClick={() => setIsOpen(true)}
+      >
+        <Swords />
+      </button>
+    );
+  }
+
+  // Expanded panel
+  return (
+    <div className="absolute bottom-4 right-4 w-72 bg-black/80 border-2 border-yellow-400
+                    shadow-[6px_6px_0_#000] p-3 text-xs font-mono z-30">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10px] text-yellow-300 uppercase retro-font">
+          UPCOMING OPEN CHALLENGES
+        </span>
+        <button onClick={() => setIsOpen(false)}>
+          <Swords />
+        </button>
+      </div>
+
+      {upcoming.length === 0 ? (
+        <p className="text-[10px] text-gray-400">NO UPCOMING CHALLENGES</p>
+      ) : (
+        <div className="max-h-56 overflow-y-auto space-y-2">
+          {/* …your existing list of upcoming challenges… */}
+        </div>
+      )}
+    </div>
+  );
+};
+
 
         /* MAIN APP */
         const PixelPlanetApp = () => {
@@ -1592,11 +1580,48 @@
                             challenges={challengeInfo.challenges}
                             currentUser={user}
                             onClose={() => setChallengeInfo(null)}
-                            onBook={() => {
-                                setChallengeInfo(null);
-                                setSelectedVenue(challengeInfo.venue);
-                                setEditingBooking(null);
-                            }}
+                            onBook={async () => {
+  const booking = challengeInfo.challenges[0];
+
+  const profileSnap = await window.dbFunctions.getDocs(
+    window.dbFunctions.query(
+      window.dbFunctions.collection(window.db, "userProfiles"),
+      window.dbFunctions.where("uid", "==", user.uid)
+    )
+  );
+
+  const userProfile = profileSnap.docs.length
+    ? profileSnap.docs[0].data()
+    : {};
+
+  await window.dbFunctions.addDoc(
+    window.dbFunctions.collection(window.db, "challengeCommitments"),
+    {
+      bookingId: booking.id,
+      venueId: booking.venueId,
+      venueName: booking.venueName,
+      date: booking.date,
+      time: booking.time,
+
+      bookingOwnerUid: booking.userUid,
+      hostName: booking.user,
+      hostEmail: booking.email,
+      hostPhone: booking.userPhone || null,
+
+      challengerUid: user.uid,
+      challengerName: user.name,
+      challengerEmail: user.email,
+      challengerPhone: userProfile.phone || null,
+
+      status: "pending",
+      createdAt: new Date()
+    }
+  );
+
+  alert("Challenge request sent!");
+  setChallengeInfo(null);
+}}
+
                             onCommit={handleCommitToChallenge}
                         />
                     )}
@@ -1640,3 +1665,4 @@
     </script>
 </body>
 </html>
+
