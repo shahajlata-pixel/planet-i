@@ -71,7 +71,7 @@
         .pixel-btn {
             box-shadow: inset -4px -4px 0px 0px rgba(0,0,0,0.5); transition: transform 0.1s; cursor: pointer;
         }
-        .pixel-btn:active { transform: translateY(2px); box-shadow: inset -2px -2px 0px 0px rgba(0,0,0,0.5); }
+        .pixel-btn:active { transform: translateY(2px); box-shadow: inset -2px -2px 0px 0 rgba(0,0,0,0.5); }
         .pixel-btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); }
         
         ::-webkit-scrollbar { width: 10px; background: #0f172a; }
@@ -176,8 +176,30 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, where, deleteDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import {
+            getAuth,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged,
+            sendPasswordResetEmail,
+            sendEmailVerification
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import {
+            getFirestore,
+            collection,
+            addDoc,
+            getDocs,
+            onSnapshot,
+            query,
+            orderBy,
+            where,
+            deleteDoc,
+            updateDoc,
+            doc,
+            setDoc,
+            getDoc
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAO_u-iyZjPpJ2zKEMUluZpokNvwN8gcwM",
@@ -194,8 +216,28 @@
 
         window.db = db;
         window.auth = auth;
-        window.authFunctions = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification };
-        window.dbFunctions = { collection, addDoc, getDocs, onSnapshot, query, orderBy, where, deleteDoc, updateDoc, doc };
+        window.authFunctions = {
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged,
+            sendPasswordResetEmail,
+            sendEmailVerification
+        };
+        window.dbFunctions = {
+            collection,
+            addDoc,
+            getDocs,
+            onSnapshot,
+            query,
+            orderBy,
+            where,
+            deleteDoc,
+            updateDoc,
+            doc,
+            setDoc,
+            getDoc
+        };
     </script>
 
     <script type="text/babel">
@@ -205,19 +247,83 @@
         const REQUIRED_DOMAIN = "@iimidr.ac.in";
 
         // --- ICONS ---
-        const MapPin = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>;
-        const XIcon = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
-        const EditIcon = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
-        const BarChart3 = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>;
-        const Sun = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>;
-        const CloudRain = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="16" y1="13" x2="16" y2="21"></line><line x1="8" y1="13" x2="8" y2="21"></line><line x1="12" y1="15" x2="12" y2="23"></line><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"></path></svg>;
-        const Swords = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"></polyline><line x1="13" y1="19" x2="19" y2="13"></line><line x1="16" y1="16" x2="20" y2="20"></line><line x1="19" y1="21" x2="21" y2="19"></line></svg>;
-        const ArrowLeft = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
-        const Sparkles = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>;
-        const LogOut = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>;
-        const ChevronDown = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"></polyline></svg>;
-        const Search = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
-        const Filter = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>;
+        const MapPin = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+        );
+        const XIcon = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        );
+        const EditIcon = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+        );
+        const BarChart3 = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="12" y1="20" x2="12" y2="10"></line>
+                <line x1="18" y1="20" x2="18" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="16"></line>
+            </svg>
+        );
+        const Sun = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+        );
+        const CloudRain = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="16" y1="13" x2="16" y2="21"></line>
+                <line x1="8" y1="13" x2="8" y2="21"></line>
+                <line x1="12" y1="15" x2="12" y2="23"></line>
+                <path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"></path>
+            </svg>
+        );
+        const Swords = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"></polyline>
+                <line x1="13" y1="19" x2="19" y2="13"></line>
+                <line x1="16" y1="16" x2="20" y2="20"></line>
+                <line x1="19" y1="21" x2="21" y2="19"></line>
+            </svg>
+        );
+        const ArrowLeft = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        );
+        const Sparkles = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
+            </svg>
+        );
+        const LogOut = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+        );
+        const ChevronDown = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        );
 
         // VENUES (kept on land areas of planet)
         const VENUES = [
@@ -331,7 +437,12 @@
         };
 
         const RetroButton = ({ children, onClick, className = "", variant = "primary", disabled = false, type = "submit" }) => {
-            const colors = { primary: 'bg-blue-600 hover:bg-blue-500', danger: 'bg-red-600 hover:bg-red-500', success: 'bg-green-600 hover:bg-green-500', neutral: 'bg-gray-600 hover:bg-gray-500' };
+            const colors = {
+                primary: 'bg-blue-600 hover:bg-blue-500',
+                danger: 'bg-red-600 hover:bg-red-500',
+                success: 'bg-green-600 hover:bg-green-500',
+                neutral: 'bg-gray-600 hover:bg-gray-500'
+            };
             return (
                 <button
                     type={type}
@@ -344,11 +455,12 @@
             );
         };
 
-        // -------- AUTH SCREEN WITH DOMAIN + VERIFICATION + RESET --------
-        const AuthScreen = ({ onLogin }) => {
+        // -------- AUTH SCREEN WITH DOMAIN + VERIFICATION + RESET + PHONE --------
+        const AuthScreen = () => {
             const [isLogin, setIsLogin] = useState(true);
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
+            const [phone, setPhone] = useState('');
             const [error, setError] = useState('');
             const recaptchaRef = useRef(null);
 
@@ -432,6 +544,22 @@
                         }
                     } else {
                         const cred = await window.authFunctions.createUserWithEmailAndPassword(window.auth, email, password);
+
+                        // Save basic profile including phone
+                        try {
+                            if (window.dbFunctions && window.db) {
+                                const profileRef = window.dbFunctions.doc(window.db, "users", cred.user.uid);
+                                await window.dbFunctions.setDoc(profileRef, {
+                                    uid: cred.user.uid,
+                                    email,
+                                    name: email.split('@')[0],
+                                    phone: phone || ''
+                                });
+                            }
+                        } catch (e) {
+                            console.log("Failed to save user profile", e);
+                        }
+
                         await window.authFunctions.sendEmailVerification(cred.user);
                         await window.authFunctions.signOut(window.auth);
                         alert("Account Created! A verification email has been sent to your IIM Indore ID. Please verify before logging in.");
@@ -499,6 +627,18 @@
                                 <label className="block text-xs text-gray-400 mb-1 retro-font">PASSWORD</label>
                                 <input type="password" className="auth-input" value={password} onChange={e => setPassword(e.target.value)} required />
                             </div>
+                            {!isLogin && (
+                                <div>
+                                    <label className="block text-xs text-gray-400 mb-1 retro-font">PHONE NUMBER</label>
+                                    <input
+                                        type="tel"
+                                        className="auth-input"
+                                        value={phone}
+                                        onChange={e => setPhone(e.target.value)}
+                                        placeholder="10-digit mobile"
+                                    />
+                                </div>
+                            )}
 
                             <div className="flex justify-center mb-4">
                                 <div id="recaptcha-container"></div>
@@ -535,9 +675,9 @@
 
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 font-mono backdrop-blur-sm">
-                    <div className="bg-[#1e293b] border-4 border-white text-white w-full max-w-lg shadow-[10px_10px_0px_0px_#000] animate-in zoom-in duration-200">
+                    <div className="bg-[#1e293b] border-4 border-white text-white w-full max-w-lg shadow-[10px_10px_0px_0px_#000]">
                         <div className="bg-blue-700 p-4 border-b-4 border-white flex justify-between items-center">
-                            <h2 className="text-lg text.white flex items-center gap-2 uppercase retro-font">
+                            <h2 className="text-lg text-white flex items-center gap-2 uppercase retro-font">
                                 <MapPin /> {bookingToEdit ? 'EDIT: ' : ''}{venue.name}
                             </h2>
                             <button onClick={onClose}><XIcon className="text-white hover:text-red-400" /></button>
@@ -627,11 +767,11 @@
             );
         };
 
-        // -------- NEW: OPEN CHALLENGE DETAILS MODAL (WITH BOOK BUTTON) --------
-        const ChallengeModal = ({ venue, challenges, onClose, onBook }) => {
+        // -------- NEW: OPEN CHALLENGE DETAILS MODAL (COMMIT + HOST REQUESTS) --------
+        const ChallengeModal = ({ venue, challenges, onClose, onBook, user, now, onCommit, onUpdateRequest }) => {
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 font-mono backdrop-blur-sm">
-                    <div className="bg-[#1e293b] border-4 border-white text-white w-full max-w-xl shadow-[10px_10px_0px_0px_#000]">
+                    <div className="bg-[#1e293b] border-4 border-white text-white w-full max-w-2xl shadow-[10px_10px_0px_0px_#000]">
                         <div className="bg-yellow-500 p-4 border-b-4 border-white flex justify-between items-center">
                             <h2 className="text-lg text-black flex items-center gap-2 uppercase retro-font">
                                 <Swords /> OPEN CHALLENGE @ {venue.name}
@@ -644,26 +784,148 @@
                             </p>
                             {challenges.map((c) => {
                                 const when = `${c.date} • ${c.time}`;
+                                const isHost = user && user.email === c.email;
+                                const interval = getBookingInterval(c);
+                                const isOver = interval ? now > interval.end : false;
+                                const requests = c.challengeRequests || [];
+                                const myReq = requests.find(r => r.email === (user ? user.email : ''));
                                 return (
                                     <div
                                         key={c.id}
-                                        className="bg-black/40 border-2 border-white p-4 mb-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                                        className="bg-black/40 border-2 border-white p-4 mb-3"
                                     >
-                                        <div>
-                                            <div className="text-sm text-green-400 retro-font">
-                                                {c.user} <span className="text-gray-400 lowercase">({c.email})</span>
+                                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                            <div>
+                                                <div className="text-sm text-green-400 retro-font">
+                                                    {c.user}{' '}
+                                                    <span className="text-gray-400 lowercase">
+                                                        ({c.email})
+                                                    </span>
+                                                </div>
+                                                <div className="text-xs text-yellow-300 mt-1 font-mono">
+                                                    {when}
+                                                </div>
+                                                <div className="text-xs text-gray-200 mt-2">
+                                                    Purpose:{' '}
+                                                    <span className="font-mono">{c.purpose || 'N/A'}</span>
+                                                </div>
                                             </div>
-                                            <div className="text-xs text-yellow-300 mt-1 font-mono">
-                                                {when}
-                                            </div>
-                                            <div className="text-xs text-gray-200 mt-2">
-                                                Purpose: <span className="font-mono">{c.purpose || 'N/A'}</span>
+                                            <div className="text-[10px] uppercase text-right text-gray-400">
+                                                <div>
+                                                    STATUS:{' '}
+                                                    <span className="text-green-400">
+                                                        {isOver ? 'OVER' : 'ACTIVE / FLAGGED'}
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    TYPE:{' '}
+                                                    <span className="text-yellow-300">OPEN CHALLENGE</span>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="text-[10px] uppercase text-right text-gray-400">
-                                            <div>STATUS: <span className="text-green-400">ACTIVE / FLAGGED</span></div>
-                                            <div>TYPE: <span className="text-yellow-300">OPEN CHALLENGE</span></div>
-                                        </div>
+
+                                        {/* Host view: see requests + accept / reject */}
+                                        {isHost && (
+                                            <div className="mt-3 border-t border-white/20 pt-2">
+                                                <div className="text-[10px] text-gray-300 uppercase mb-1">
+                                                    CHALLENGERS
+                                                </div>
+                                                {requests.length === 0 && (
+                                                    <div className="text-[11px] text-gray-500">
+                                                        No one has committed to this challenge yet.
+                                                    </div>
+                                                )}
+                                                {requests.map((r) => (
+                                                    <div
+                                                        key={r.email}
+                                                        className="flex items-center justify-between text-[11px] bg-white/5 px-2 py-1 mt-1"
+                                                    >
+                                                        <div>
+                                                            <span className="text-green-300">{r.user}</span>{' '}
+                                                            <span className="text-gray-300 lowercase">({r.email})</span>{' '}
+                                                            {r.phone && (
+                                                                <span className="text-blue-300">
+                                                                    • {r.phone}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span
+                                                                className={
+                                                                    r.status === 'accepted'
+                                                                        ? 'text-green-400'
+                                                                        : r.status === 'rejected'
+                                                                        ? 'text-red-400'
+                                                                        : 'text-yellow-300'
+                                                                }
+                                                            >
+                                                                {r.status.toUpperCase()}
+                                                            </span>
+                                                            {r.status === 'pending' && (
+                                                                <>
+                                                                    <RetroButton
+                                                                        type="button"
+                                                                        variant="success"
+                                                                        className="px-2 py-1 text-[10px]"
+                                                                        onClick={() =>
+                                                                            onUpdateRequest(c, r.email, 'accepted')
+                                                                        }
+                                                                    >
+                                                                        ACCEPT
+                                                                    </RetroButton>
+                                                                    <RetroButton
+                                                                        type="button"
+                                                                        variant="danger"
+                                                                        className="px-2 py-1 text-[10px]"
+                                                                        onClick={() =>
+                                                                            onUpdateRequest(c, r.email, 'rejected')
+                                                                        }
+                                                                    >
+                                                                        REJECT
+                                                                    </RetroButton>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Challenger view: commit button + status */}
+                                        {!isHost && user && (
+                                            <div className="mt-3 border-t border-white/20 pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                                <div className="text-[11px] text-gray-300">
+                                                    {myReq ? (
+                                                        <>
+                                                            Your status:{' '}
+                                                            <span
+                                                                className={
+                                                                    myReq.status === 'accepted'
+                                                                        ? 'text-green-400'
+                                                                        : myReq.status === 'rejected'
+                                                                        ? 'text-red-400'
+                                                                        : 'text-yellow-300'
+                                                                }
+                                                            >
+                                                                {myReq.status.toUpperCase()}
+                                                            </span>
+                                                        </>
+                                                    ) : (
+                                                        <>You haven't committed to this challenge yet.</>
+                                                    )}
+                                                </div>
+                                                {!isOver && (!myReq || myReq.status === 'rejected') && (
+                                                    <RetroButton
+                                                        type="button"
+                                                        variant="success"
+                                                        className="text-[11px]"
+                                                        onClick={() => onCommit(c)}
+                                                    >
+                                                        COMMIT TO THIS CHALLENGE
+                                                    </RetroButton>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -685,63 +947,86 @@
             );
         };
 
-        // ---------- UPCOMING OPEN CHALLENGES PANEL (BOTTOM RIGHT) ----------
-       // SHOW ALL OPEN CHALLENGES THAT ARE NOT OVER YET (ACTIVE + FUTURE)
-const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
-    const upcoming = bookings
-        .filter(b => b.openChallenge)                    // must be open challenge
-        .map(b => {
-            const interval = getBookingInterval(b);
-            return { booking: b, interval };
-        })
-        .filter(x => x.interval && x.interval.end >= now) // still ongoing or in future
-        .sort((a, b) => a.interval.start - b.interval.start)
-        .slice(0, 6);
+        // ---------- COLLAPSIBLE UPCOMING OPEN CHALLENGES PANEL ----------
+        const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
+            const [isOpen, setIsOpen] = useState(false);
 
-    if (upcoming.length === 0) return null;
+            const upcoming = bookings
+                .filter(b => b.openChallenge)
+                .map(b => ({ booking: b, interval: getBookingInterval(b) }))
+                .filter(x => x.interval && x.interval.end >= now)
+                .sort((a, b) => a.interval.start - b.interval.start)
+                .slice(0, 8);
 
-    return (
-        <div className="absolute bottom-4 right-4 w-72 bg-black/70 border-2 border-yellow-400 shadow-[6px_6px_0_#000] p-3 text-xs font-mono z-30">
-            <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] text-yellow-300 uppercase retro-font">
-                    UPCOMING OPEN CHALLENGES
-                </span>
-                <Sparkles />
-            </div>
-            <div className="max-h-56 overflow-y-auto space-y-2">
-                {upcoming.map(({ booking }) => {
-                    const venue = VENUES.find(v => v.id === booking.venueId);
-                    const venueName = venue ? venue.name : booking.venueName;
-                    return (
-                        <button
-                            key={booking.id}
-                            onClick={() => {
-                                const v = venue || { id: booking.venueId, name: booking.venueName, category: 'Sports' };
-                                onSelect(v, [booking]);
-                            }}
-                            className="w-full text-left bg-[#0b1120] border border-white/30 px-2 py-2 hover:bg-white/10 transition-colors"
-                        >
-                            <div className="flex justify-between">
-                                <span className="text-[10px] text-green-400 uppercase truncate mr-2">
-                                    {venueName}
+            const hasItems = upcoming.length > 0;
+
+            return (
+                <div className="fixed bottom-4 right-4 z-30 flex flex-col items-end">
+                    {/* Toggle button */}
+                    <button
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="bg-black/80 border-2 border-yellow-400 px-3 py-2 flex items-center gap-2 shadow-[4px_4px_0_#000] hover:bg-black transition-colors"
+                    >
+                        <Swords />
+                        {hasItems && (
+                            <span className="text-[10px] text-yellow-300 retro-font">
+                                {upcoming.length}
+                            </span>
+                        )}
+                    </button>
+
+                    {/* Panel */}
+                    {isOpen && (
+                        <div className="mt-2 w-80 bg-black/80 border-2 border-yellow-400 shadow-[6px_6px_0_#000] p-3 text-xs font-mono">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[10px] text-yellow-300 uppercase retro-font">
+                                    UPCOMING OPEN CHALLENGES
                                 </span>
-                                <span className="text-[10px] text-gray-300">
-                                    {booking.date}
-                                </span>
+                                <Sparkles />
                             </div>
-                            <div className="text-[10px] text-yellow-300 mt-1">
-                                {booking.time}
-                            </div>
-                            <div className="text-[9px] text-gray-400 lowercase mt-1 truncate">
-                                by {booking.user} ({booking.email})
-                            </div>
-                        </button>
-                    );
-                })}
-            </div>
-        </div>
-    );
-};
+                            {!hasItems && (
+                                <div className="py-4 text-center text-[11px] text-gray-400 retro-font">
+                                    NO UPCOMING CHALLENGES
+                                </div>
+                            )}
+                            {hasItems && (
+                                <div className="max-h-56 overflow-y-auto space-y-2">
+                                    {upcoming.map(({ booking }) => {
+                                        const venue = VENUES.find(v => v.id === booking.venueId);
+                                        const venueName = venue ? venue.name : booking.venueName;
+                                        return (
+                                            <button
+                                                key={booking.id}
+                                                onClick={() => {
+                                                    const v = venue || { id: booking.venueId, name: booking.venueName, category: 'Sports' };
+                                                    onSelect(v, [booking]);
+                                                }}
+                                                className="w-full text-left bg-[#0b1120] border border-white/30 px-2 py-2 hover:bg-white/10 transition-colors"
+                                            >
+                                                <div className="flex justify-between">
+                                                    <span className="text-[10px] text-green-400 uppercase truncate mr-2">
+                                                        {venueName}
+                                                    </span>
+                                                    <span className="text-[10px] text-gray-300">
+                                                        {booking.date}
+                                                    </span>
+                                                </div>
+                                                <div className="text-[10px] text-yellow-300 mt-1">
+                                                    {booking.time}
+                                                </div>
+                                                <div className="text-[9px] text-gray-400 lowercase mt-1 truncate">
+                                                    by {booking.user} ({booking.email})
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        };
 
         const PixelPlanetApp = () => {
             const [user, setUser] = useState(null);
@@ -756,18 +1041,42 @@ const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
 
             const [sortOrder, setSortOrder] = useState("asc");
             const [sortColumn, setSortColumn] = useState("date"); 
-            const [colFilters, setColFilters] = useState({ venue: '', date: '', time: '', user: '', email: '', purpose: '', challenge: '', bookedAt: '' });
+            const [colFilters, setColFilters] = useState({
+                venue: '',
+                date: '',
+                time: '',
+                user: '',
+                email: '',
+                phone: '',
+                purpose: '',
+                challenge: '',
+                bookedAt: ''
+            });
 
             const [challengeInfo, setChallengeInfo] = useState(null); // for open challenge modal
 
+            // Auth + user profile (with phone)
             useEffect(() => {
                 const checkAuth = setInterval(() => {
                     if (window.auth && window.authFunctions) {
                         clearInterval(checkAuth);
-                        window.authFunctions.onAuthStateChanged(window.auth, (u) => {
+                        window.authFunctions.onAuthStateChanged(window.auth, async (u) => {
                             if (u && (u.emailVerified || u.email === ADMIN_EMAIL)) {
+                                let phone = '';
+                                try {
+                                    if (window.dbFunctions && window.db) {
+                                        const ref = window.dbFunctions.doc(window.db, "users", u.uid);
+                                        const snap = await window.dbFunctions.getDoc(ref);
+                                        if (snap.exists()) {
+                                            const data = snap.data();
+                                            phone = data.phone || '';
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.log("Failed to load user profile", e);
+                                }
                                 const name = u.email.split('@')[0]; 
-                                setUser({ name: name, email: u.email, role: 'Student' });
+                                setUser({ name, email: u.email, role: 'Student', uid: u.uid, phone });
                             } else setUser(null);
                         });
                     }
@@ -788,9 +1097,13 @@ const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
                 return () => { clearInterval(checkAuth); clearInterval(timer); }
             }, []);
 
+            // live bookings
             useEffect(() => {
                 if (!user || !window.dbFunctions) return;
-                const q = window.dbFunctions.query(window.dbFunctions.collection(window.db, "bookings"), window.dbFunctions.orderBy("timestamp", "desc"));
+                const q = window.dbFunctions.query(
+                    window.dbFunctions.collection(window.db, "bookings"),
+                    window.dbFunctions.orderBy("timestamp", "desc")
+                );
                 const unsubscribe = window.dbFunctions.onSnapshot(q, (snapshot) => {
                     const loaded = [];
                     snapshot.forEach((doc) => loaded.push({ id: doc.id, ...doc.data() }));
@@ -800,38 +1113,58 @@ const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
             }, [user]);
 
             const handleBookingConfirm = async (data) => {
-                if(!data.date || !data.time) return alert("Select Date/Time");
-                const isConflict = bookings.some(b => b.venueId === data.venue.id && b.date === data.date && b.time === data.time && b.id !== data.id);
+                if (!data.date || !data.time) return alert("Select Date/Time");
+                const isConflict = bookings.some(
+                    b => b.venueId === data.venue.id && b.date === data.date && b.time === data.time && b.id !== data.id
+                );
                 if (isConflict) return alert("Slot already booked!");
 
                 const payload = { 
-                    venueName: data.venue.name, venueId: data.venue.id, user: user.name, email: user.email,
-                    date: data.date, time: data.time, purpose: data.purpose || "N/A",
-                    openChallenge: data.openChallenge || false, timestamp: new Date()
+                    venueName: data.venue.name,
+                    venueId: data.venue.id,
+                    user: user.name,
+                    email: user.email,
+                    phone: user.phone || '',
+                    date: data.date,
+                    time: data.time,
+                    purpose: data.purpose || "N/A",
+                    openChallenge: data.openChallenge || false,
+                    timestamp: new Date()
                 };
 
                 try {
                     if (data.id) {
-                        await window.dbFunctions.updateDoc(window.dbFunctions.doc(window.db, "bookings", data.id), payload);
+                        await window.dbFunctions.updateDoc(
+                            window.dbFunctions.doc(window.db, "bookings", data.id),
+                            payload
+                        );
                         alert("Booking Updated!");
                     } else {
-                        await window.dbFunctions.addDoc(window.dbFunctions.collection(window.db, "bookings"), payload);
+                        await window.dbFunctions.addDoc(
+                            window.dbFunctions.collection(window.db, "bookings"),
+                            payload
+                        );
                         alert("Booking Successful!");
                     }
                     setView('bookings');
-                } catch(e) { alert("Action Failed: " + e.message); }
-                setSelectedVenue(null); setEditingBooking(null);
+                } catch (e) {
+                    alert("Action Failed: " + e.message);
+                }
+                setSelectedVenue(null);
+                setEditingBooking(null);
             };
 
             const handleCancel = async (id) => {
-                if(confirm("Cancel this booking?")) {
-                    try { await window.dbFunctions.deleteDoc(window.dbFunctions.doc(window.db, "bookings", id)); } catch(e) { alert("Failed to cancel."); }
+                if (confirm("Cancel this booking?")) {
+                    try { await window.dbFunctions.deleteDoc(window.dbFunctions.doc(window.db, "bookings", id)); }
+                    catch (e) { alert("Failed to cancel."); }
                 }
             };
 
             const handleEdit = (booking) => {
                 const venueObj = VENUES.find(v => v.id === booking.venueId) || { name: booking.venueName, category: 'Unknown' };
-                setEditingBooking(booking); setSelectedVenue(venueObj);
+                setEditingBooking(booking);
+                setSelectedVenue(venueObj);
             };
 
             const toggleCategory = (cat) => setExpandedCat(expandedCat === cat ? null : cat);
@@ -863,6 +1196,54 @@ const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
                 }
             };
 
+            // Commit to an open challenge
+            const handleCommitToChallenge = async (booking) => {
+                if (!user) {
+                    alert("Please log in first.");
+                    return;
+                }
+                try {
+                    const current = booking.challengeRequests || [];
+                    const idx = current.findIndex(r => r.email === user.email);
+                    const base = {
+                        email: user.email,
+                        user: user.name,
+                        phone: user.phone || '',
+                        status: 'pending',
+                        requestedAt: new Date()
+                    };
+                    let updated;
+                    if (idx >= 0) {
+                        updated = current.map((r, i) => (i === idx ? { ...r, ...base } : r));
+                    } else {
+                        updated = [...current, base];
+                    }
+                    await window.dbFunctions.updateDoc(
+                        window.dbFunctions.doc(window.db, "bookings", booking.id),
+                        { challengeRequests: updated }
+                    );
+                    alert("Challenge request sent to host.");
+                } catch (e) {
+                    alert("Failed to commit to challenge: " + e.message);
+                }
+            };
+
+            // Host accepts / rejects a request
+            const handleUpdateChallengeRequest = async (booking, requesterEmail, newStatus) => {
+                try {
+                    const current = booking.challengeRequests || [];
+                    const updated = current.map(r =>
+                        r.email === requesterEmail ? { ...r, status: newStatus } : r
+                    );
+                    await window.dbFunctions.updateDoc(
+                        window.dbFunctions.doc(window.db, "bookings", booking.id),
+                        { challengeRequests: updated }
+                    );
+                } catch (e) {
+                    alert("Failed to update challenge request: " + e.message);
+                }
+            };
+
             const filteredBookings = bookings
                 .filter(b => {
                     const bookedAtStr = b.timestamp?.toDate ? b.timestamp.toDate().toLocaleTimeString() : '';
@@ -872,6 +1253,7 @@ const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
                         b.time.toLowerCase().includes(colFilters.time.toLowerCase()) &&
                         b.user.toLowerCase().includes(colFilters.user.toLowerCase()) &&
                         b.email.toLowerCase().includes(colFilters.email.toLowerCase()) &&
+                        (b.phone || '').toLowerCase().includes(colFilters.phone.toLowerCase()) &&
                         (b.purpose || '').toLowerCase().includes(colFilters.purpose.toLowerCase()) &&
                         (colFilters.challenge === '' ||
                             (colFilters.challenge === 'yes' ? b.openChallenge : colFilters.challenge === 'no' ? !b.openChallenge : false)) &&
@@ -885,6 +1267,7 @@ const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
                         case 'venue': compareA = a.venueName; compareB = b.venueName; break;
                         case 'user': compareA = a.user; compareB = b.user; break;
                         case 'email': compareA = a.email; compareB = b.email; break;
+                        case 'phone': compareA = a.phone || ''; compareB = b.phone || ''; break;
                         case 'purpose': compareA = a.purpose; compareB = b.purpose; break;
                         case 'challenge': compareA = a.openChallenge; compareB = b.openChallenge; break;
                         case 'time': compareA = a.time; compareB = b.time; break;
@@ -894,7 +1277,8 @@ const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
                             break;
                         case 'date':
                         default: 
-                            const dateA = new Date(a.date); const dateB = new Date(b.date);
+                            const dateA = new Date(a.date);
+                            const dateB = new Date(b.date);
                             return isAsc ? dateA - dateB : dateB - dateA;
                     }
                     if (typeof compareA === 'string') return isAsc ? compareA.localeCompare(compareB) : compareB.localeCompare(compareA);
@@ -902,7 +1286,7 @@ const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
                     return compareB > compareA ? 1 : -1;
                 });
 
-            if (!user) return <AuthScreen onLogin={setUser} />;
+            if (!user) return <AuthScreen />;
 
             return (
                 <div className="min-h-screen flex flex-col relative custom-cursor overflow-x-hidden">
@@ -1030,7 +1414,6 @@ const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
                                         onVenueClick={handleVenueClick}
                                         now={time}
                                     />
-                                    {/* NEW: upcoming challenges panel bottom-right */}
                                     <UpcomingChallengesPanel
                                         bookings={bookings}
                                         now={time}
@@ -1058,40 +1441,122 @@ const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
                                         <div className="grid gap-4 w-full">
                                             {bookings
                                                 .filter(b => b.email === user.email)
-                                                .map(b => (
-                                                    <div
-                                                        key={b.id}
-                                                        className="bg-black/40 border-2 border-white p-6 flex justify-between items-center hover:bg-white/5 transition-colors"
-                                                    >
-                                                        <div>
-                                                            <div className="text-xl text-green-400 font-bold uppercase mb-2 retro-font">
-                                                                {b.venueName}
+                                                .map(b => {
+                                                    const requests = b.challengeRequests || [];
+                                                    return (
+                                                        <div
+                                                            key={b.id}
+                                                            className="bg-black/40 border-2 border-white p-6 hover:bg-white/5 transition-colors"
+                                                        >
+                                                            <div className="flex justify-between items-center">
+                                                                <div>
+                                                                    <div className="text-xl text-green-400 font-bold uppercase mb-2 retro-font">
+                                                                        {b.venueName}
+                                                                    </div>
+                                                                    <div className="text-md text-white font-mono">
+                                                                        {b.date} @ {b.time}
+                                                                    </div>
+                                                                    {b.openChallenge && (
+                                                                        <div className="text-sm text-yellow-400 mt-2 animate-pulse">
+                                                                            {'>'}{'>'} OPEN CHALLENGE FLAGGED
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex gap-2">
+                                                                    <button
+                                                                        onClick={() => handleEdit(b)}
+                                                                        className="bg-blue-500/20 p-2 rounded hover:bg-blue-500 text-blue-400 hover:text-white transition-colors"
+                                                                    >
+                                                                        <EditIcon className="w-4 h-4" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleCancel(b.id)}
+                                                                        className="bg-red-500/20 p-2 rounded hover:bg-red-500 text-red-400 hover:text-white transition-colors"
+                                                                    >
+                                                                        <XIcon className="w-4 h-4" />
+                                                                    </button>
+                                                                </div>
                                                             </div>
-                                                            <div className="text-md text-white font-mono">
-                                                                {b.date} @ {b.time}
-                                                            </div>
+
+                                                            {/* Host view of challenge requests inside My Bookings */}
                                                             {b.openChallenge && (
-                                                                <div className="text-sm text-yellow-400 mt-2 animate-pulse">
-                                                                    {'>'}{'>'} OPEN CHALLENGE FLAGGED
+                                                                <div className="mt-4 border-t border-white/20 pt-2">
+                                                                    <div className="text-[10px] text-gray-300 uppercase mb-1">
+                                                                        CHALLENGERS
+                                                                    </div>
+                                                                    {requests.length === 0 && (
+                                                                        <div className="text-[11px] text-gray-500">
+                                                                            No one has committed to this challenge yet.
+                                                                        </div>
+                                                                    )}
+                                                                    {requests.map(r => (
+                                                                        <div
+                                                                            key={r.email}
+                                                                            className="flex items-center justify-between text-[11px] bg-white/5 px-2 py-1 mt-1"
+                                                                        >
+                                                                            <div>
+                                                                                <span className="text-green-300">{r.user}</span>{' '}
+                                                                                <span className="text-gray-300 lowercase">
+                                                                                    ({r.email})
+                                                                                </span>{' '}
+                                                                                {r.phone && (
+                                                                                    <span className="text-blue-300">
+                                                                                        • {r.phone}
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span
+                                                                                    className={
+                                                                                        r.status === 'accepted'
+                                                                                            ? 'text-green-400'
+                                                                                            : r.status === 'rejected'
+                                                                                            ? 'text-red-400'
+                                                                                            : 'text-yellow-300'
+                                                                                    }
+                                                                                >
+                                                                                    {r.status.toUpperCase()}
+                                                                                </span>
+                                                                                {r.status === 'pending' && (
+                                                                                    <>
+                                                                                        <RetroButton
+                                                                                            type="button"
+                                                                                            variant="success"
+                                                                                            className="px-2 py-1 text-[10px]"
+                                                                                            onClick={() =>
+                                                                                                handleUpdateChallengeRequest(
+                                                                                                    b,
+                                                                                                    r.email,
+                                                                                                    'accepted'
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            ACCEPT
+                                                                                        </RetroButton>
+                                                                                        <RetroButton
+                                                                                            type="button"
+                                                                                            variant="danger"
+                                                                                            className="px-2 py-1 text-[10px]"
+                                                                                            onClick={() =>
+                                                                                                handleUpdateChallengeRequest(
+                                                                                                    b,
+                                                                                                    r.email,
+                                                                                                    'rejected'
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            REJECT
+                                                                                        </RetroButton>
+                                                                                    </>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
                                                                 </div>
                                                             )}
                                                         </div>
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                onClick={() => handleEdit(b)}
-                                                                className="bg-blue-500/20 p-2 rounded hover:bg-blue-500 text-blue-400 hover:text-white transition-colors"
-                                                            >
-                                                                <EditIcon className="w-4 h-4" />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleCancel(b.id)}
-                                                                className="bg-red-500/20 p-2 rounded hover:bg-red-500 text-red-400 hover:text-white transition-colors"
-                                                            >
-                                                                <XIcon className="w-4 h-4" />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                         </div>
                                     )}
                                 </div>
@@ -1191,6 +1656,20 @@ const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
                                                     </th>
                                                     <th>
                                                         <div className="header-content">
+                                                            <div className="header-title" onClick={() => handleSort('phone')}>
+                                                                PHONE {sortColumn === 'phone' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Filter..."
+                                                                className="col-filter-input"
+                                                                onClick={e => e.stopPropagation()}
+                                                                onChange={e => handleFilterChange('phone', e.target.value)}
+                                                            />
+                                                        </div>
+                                                    </th>
+                                                    <th>
+                                                        <div className="header-content">
                                                             <div className="header-title" onClick={() => handleSort('purpose')}>
                                                                 PURPOSE {sortColumn === 'purpose' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
                                                             </div>
@@ -1244,11 +1723,10 @@ const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
                                                         <td>{b.time}</td>
                                                         <td>{b.user}</td>
                                                         <td style={{ textTransform: 'lowercase' }}>{b.email}</td>
+                                                        <td>{b.phone || '-'}</td>
                                                         <td>{b.purpose}</td>
                                                         <td>{b.openChallenge ? 'YES' : 'NO'}</td>
-                                                        <td>
-                                                            {b.timestamp?.toDate ? b.timestamp.toDate().toLocaleTimeString() : 'N/A'}
-                                                        </td>
+                                                        <td>{b.timestamp?.toDate ? b.timestamp.toDate().toLocaleTimeString() : 'N/A'}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -1336,12 +1814,16 @@ const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
                         <ChallengeModal
                             venue={challengeInfo.venue}
                             challenges={challengeInfo.challenges}
+                            user={user}
+                            now={time}
                             onClose={() => setChallengeInfo(null)}
                             onBook={() => {
                                 setChallengeInfo(null);
                                 setSelectedVenue(challengeInfo.venue);
                                 setEditingBooking(null);
                             }}
+                            onCommit={handleCommitToChallenge}
+                            onUpdateRequest={handleUpdateChallengeRequest}
                         />
                     )}
                 </div>
@@ -1376,4 +1858,3 @@ const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
     </script>
 </body>
 </html>
-
