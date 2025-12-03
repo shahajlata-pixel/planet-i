@@ -239,12 +239,12 @@
 
         const TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
 
-        // --------- HELPER: IS OPEN CHALLENGE ACTIVE NOW? ----------
-        function isChallengeActive(booking, now) {
-            if (!booking || !booking.openChallenge || !booking.date || !booking.time) return false;
+        // ---------- TIME HELPERS ----------
+        function getBookingInterval(booking) {
+            if (!booking || !booking.date || !booking.time) return null;
             try {
                 const [startStrRaw, endStrRaw] = booking.time.split('-');
-                if (!startStrRaw || !endStrRaw) return false;
+                if (!startStrRaw || !endStrRaw) return null;
                 const startStr = startStrRaw.trim();
                 const endStr = endStrRaw.trim();
 
@@ -255,11 +255,25 @@
                 const start = new Date(year, month - 1, day, sh, sm || 0);
                 const end = new Date(year, month - 1, day, eh, em || 0);
 
-                return now >= start && now <= end;
+                return { start, end };
             } catch (e) {
-                console.log("Time parse error", e, booking);
-                return false;
+                console.log("Interval parse error", e, booking);
+                return null;
             }
+        }
+
+        function isChallengeActive(booking, now) {
+            if (!booking || !booking.openChallenge) return false;
+            const interval = getBookingInterval(booking);
+            if (!interval) return false;
+            return now >= interval.start && now <= interval.end;
+        }
+
+        function isChallengeUpcoming(booking, now) {
+            if (!booking || !booking.openChallenge) return false;
+            const interval = getBookingInterval(booking);
+            if (!interval) return false;
+            return now < interval.start;
         }
 
         // --------- COMPONENTS ----------
@@ -388,7 +402,6 @@
                 }
             };
 
-            // Enforce domain for both login and signup (admin exempt)
             const isAllowedEmail = (email) => {
                 return email === ADMIN_EMAIL || email.endsWith(REQUIRED_DOMAIN);
             };
@@ -411,7 +424,6 @@
                 try {
                     if (isLogin) {
                         const cred = await window.authFunctions.signInWithEmailAndPassword(window.auth, email, password);
-                        // Block non-verified users (except admin)
                         if (!cred.user.emailVerified && cred.user.email !== ADMIN_EMAIL) {
                             await window.authFunctions.signOut(window.auth);
                             resetCaptcha();
@@ -420,7 +432,6 @@
                         }
                     } else {
                         const cred = await window.authFunctions.createUserWithEmailAndPassword(window.auth, email, password);
-                        // Send verification mail to verify that the email actually exists
                         await window.authFunctions.sendEmailVerification(cred.user);
                         await window.authFunctions.signOut(window.auth);
                         alert("Account Created! A verification email has been sent to your IIM Indore ID. Please verify before logging in.");
@@ -616,8 +627,8 @@
             );
         };
 
-        // -------- NEW: OPEN CHALLENGE DETAILS MODAL --------
-        const ChallengeModal = ({ venue, challenges, onClose }) => {
+        // -------- NEW: OPEN CHALLENGE DETAILS MODAL (WITH BOOK BUTTON) --------
+        const ChallengeModal = ({ venue, challenges, onClose, onBook }) => {
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 font-mono backdrop-blur-sm">
                     <div className="bg-[#1e293b] border-4 border-white text-white w-full max-w-xl shadow-[10px_10px_0px_0px_#000]">
@@ -650,7 +661,7 @@
                                             </div>
                                         </div>
                                         <div className="text-[10px] uppercase text-right text-gray-400">
-                                            <div>STATUS: <span className="text-green-400">ACTIVE</span></div>
+                                            <div>STATUS: <span className="text-green-400">ACTIVE / FLAGGED</span></div>
                                             <div>TYPE: <span className="text-yellow-300">OPEN CHALLENGE</span></div>
                                         </div>
                                     </div>
@@ -660,12 +671,72 @@
                                 Glow on the map indicates a challenge is currently active in this time window. Once the booking
                                 time is over, the pin will stop glowing automatically.
                             </p>
-                            <div className="mt-4 flex justify-end">
+                            <div className="mt-4 flex justify-between gap-3">
                                 <RetroButton variant="neutral" type="button" onClick={onClose}>
                                     CLOSE
                                 </RetroButton>
+                                <RetroButton variant="primary" type="button" onClick={onBook}>
+                                    BOOK THIS VENUE
+                                </RetroButton>
                             </div>
                         </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ---------- UPCOMING OPEN CHALLENGES PANEL (BOTTOM RIGHT) ----------
+        const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
+            const upcoming = bookings
+                .filter(b => isChallengeUpcoming(b, now))
+                .map(b => {
+                    const interval = getBookingInterval(b);
+                    return { booking: b, interval };
+                })
+                .filter(x => x.interval)
+                .sort((a, b) => a.interval.start - b.interval.start)
+                .slice(0, 6);
+
+            if (upcoming.length === 0) return null;
+
+            return (
+                <div className="absolute bottom-4 right-4 w-72 bg-black/70 border-2 border-yellow-400 shadow-[6px_6px_0_#000] p-3 text-xs font-mono z-30">
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] text-yellow-300 uppercase retro-font">
+                            UPCOMING OPEN CHALLENGES
+                        </span>
+                        <Sparkles />
+                    </div>
+                    <div className="max-h-56 overflow-y-auto space-y-2">
+                        {upcoming.map(({ booking }) => {
+                            const venue = VENUES.find(v => v.id === booking.venueId);
+                            const venueName = venue ? venue.name : booking.venueName;
+                            return (
+                                <button
+                                    key={booking.id}
+                                    onClick={() => {
+                                        const v = venue || { id: booking.venueId, name: booking.venueName, category: 'Sports' };
+                                        onSelect(v, [booking]);
+                                    }}
+                                    className="w-full text-left bg-[#0b1120] border border-white/30 px-2 py-2 hover:bg-white/10 transition-colors"
+                                >
+                                    <div className="flex justify-between">
+                                        <span className="text-[10px] text-green-400 uppercase truncate mr-2">
+                                            {venueName}
+                                        </span>
+                                        <span className="text-[10px] text-gray-300">
+                                            {booking.date}
+                                        </span>
+                                    </div>
+                                    <div className="text-[10px] text-yellow-300 mt-1">
+                                        {booking.time}
+                                    </div>
+                                    <div className="text-[9px] text-gray-400 lowercase mt-1 truncate">
+                                        by {booking.user} ({booking.email})
+                                    </div>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             );
@@ -778,7 +849,7 @@
                 setColFilters(prev => ({ ...prev, [column]: value }));
             };
 
-            // NEW: when clicking a venue on planet, show challenge info if any active, else booking modal
+            // When clicking a venue on the planet:
             const handleVenueClick = (venue) => {
                 const activeChallenges = bookings.filter(
                     b => b.venueId === venue.id && isChallengeActive(b, time)
@@ -836,7 +907,7 @@
                 <div className="min-h-screen flex flex-col relative custom-cursor overflow-x-hidden">
                     <header className="z-20 px-6 py-4 border-b border-white/10 bg-[#0f172a]/80 backdrop-blur-md flex justify-between items-center sticky top-0">
                         <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-500/20 retro-font">
+                            <div className="w-10 h-10 bg-gradient.to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-500/20 retro-font">
                                 P
                             </div>
                             <div>
@@ -900,7 +971,7 @@
                                 {user.email === ADMIN_EMAIL && (
                                     <button
                                         onClick={() => setView('database')}
-                                        className={`block w-full text-left p-2 rounded hover:bg-white/10 transition-colors ${
+                                        className={`block w-full text-left p-2 rounded hover:bg.white/10 transition-colors ${
                                             view === 'database' ? 'text-yellow-400' : 'text-white'
                                         }`}
                                     >
@@ -949,14 +1020,22 @@
                             </nav>
                         </aside>
                         
-                        <main className="flex-1 p-6 h-full overflow-y-auto">
+                        <main className="flex-1 p-6 h-full overflow-y-auto relative">
                             {view === 'map' && (
-                                <PixelEarth
-                                    venues={VENUES}
-                                    bookings={bookings}
-                                    onVenueClick={handleVenueClick}
-                                    now={time}
-                                />
+                                <div className="relative">
+                                    <PixelEarth
+                                        venues={VENUES}
+                                        bookings={bookings}
+                                        onVenueClick={handleVenueClick}
+                                        now={time}
+                                    />
+                                    {/* NEW: upcoming challenges panel bottom-right */}
+                                    <UpcomingChallengesPanel
+                                        bookings={bookings}
+                                        now={time}
+                                        onSelect={(venue, challenges) => setChallengeInfo({ venue, challenges })}
+                                    />
+                                </div>
                             )}
                             
                             {view === 'bookings' && (
@@ -1257,6 +1336,11 @@
                             venue={challengeInfo.venue}
                             challenges={challengeInfo.challenges}
                             onClose={() => setChallengeInfo(null)}
+                            onBook={() => {
+                                setChallengeInfo(null);
+                                setSelectedVenue(challengeInfo.venue);
+                                setEditingBooking(null);
+                            }}
                         />
                     )}
                 </div>
