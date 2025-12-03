@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Planet-I Booking System</title>
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    
+
     <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
@@ -20,7 +20,7 @@
 
     <!-- Custom Fonts -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+        @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap");
 
         :root {
             --pixel-bg: #050914;
@@ -30,7 +30,7 @@
         }
 
         body {
-            font-family: 'VT323', monospace;
+            font-family: "VT323", monospace;
             background-color: var(--pixel-bg);
             image-rendering: pixelated;
             margin: 0;
@@ -40,83 +40,156 @@
             overflow-y: auto;
         }
 
-        .custom-cursor { cursor: crosshair; }
-        .retro-font { font-family: 'Press Start 2P', cursive; }
+        .custom-cursor {
+            cursor: crosshair;
+        }
+        .retro-font {
+            font-family: "Press Start 2P", cursive;
+        }
 
         /* Dynamic Star Background */
         .stars {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
-            background-image: 
-                radial-gradient(2px 2px at 20px 30px, #eee, rgba(0,0,0,0)),
-                radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0,0)),
-                radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0,0,0,0)),
-                radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0)),
-                radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0));
-            background-repeat: repeat; background-size: 200px 200px; opacity: 0.3; z-index: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background-image: radial-gradient(2px 2px at 20px 30px, #eee, rgba(0, 0, 0, 0)),
+                radial-gradient(2px 2px at 40px 70px, #fff, rgba(0, 0, 0, 0)),
+                radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0, 0, 0, 0)),
+                radial-gradient(2px 2px at 90px 40px, #fff, rgba(0, 0, 0, 0)),
+                radial-gradient(2px 2px at 130px 80px, #fff, rgba(0, 0, 0, 0));
+            background-repeat: repeat;
+            background-size: 200px 200px;
+            opacity: 0.3;
+            z-index: 0;
             animation: twinkle 5s infinite;
         }
-        @keyframes twinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.5; } }
+        @keyframes twinkle {
+            0%,
+            100% {
+                opacity: 0.3;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
 
         .scanlines {
-            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
-            background-size: 100% 4px; position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 50;
+            background: linear-gradient(
+                to bottom,
+                rgba(255, 255, 255, 0),
+                rgba(255, 255, 255, 0) 50%,
+                rgba(0, 0, 0, 0.1) 50%,
+                rgba(0, 0, 0, 0.1)
+            );
+            background-size: 100% 4px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 50;
         }
 
-        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-15px); } 100% { transform: translateY(0px); } }
-        .animate-float { animation: float 6s ease-in-out infinite; }
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-15px);
+            }
+            100% {
+                transform: translateY(0px);
+            }
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
 
-        @keyframes pulse-glow { 0%, 100% { filter: drop-shadow(0 0 4px #fbbf24); } 50% { filter: drop-shadow(0 0 12px #fbbf24); } }
-        .animate-glow { animation: pulse-glow 2s infinite; }
+        @keyframes pulse-glow {
+            0%,
+            100% {
+                filter: drop-shadow(0 0 4px #fbbf24);
+            }
+            50% {
+                filter: drop-shadow(0 0 12px #fbbf24);
+            }
+        }
+        .animate-glow {
+            animation: pulse-glow 2s infinite;
+        }
 
         .pixel-btn {
-            box-shadow: inset -4px -4px 0px 0px rgba(0,0,0,0.5); transition: transform 0.1s; cursor: pointer;
+            box-shadow: inset -4px -4px 0px 0px rgba(0, 0, 0, 0.5);
+            transition: transform 0.1s;
+            cursor: pointer;
         }
-        .pixel-btn:active { transform: translateY(2px); box-shadow: inset -2px -2px 0px 0px rgba(0,0,0,0.5); }
-        .pixel-btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); }
-        
-        ::-webkit-scrollbar { width: 10px; background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #3b82f6; border: 2px solid #0f172a; }
+        .pixel-btn:active {
+            transform: translateY(2px);
+            box-shadow: inset -2px -2px 0px 0px rgba(0, 0, 0, 0.5);
+        }
+        .pixel-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(100%);
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border: 2px solid #0f172a;
+        }
 
         /* TABLE STYLES */
-        .retro-table-container { 
-            border: 4px solid white; 
-            box-shadow: 4px 4px 0px #000; 
-            background: #0f172a; 
-            overflow: auto; 
-            flex: 1; 
+        .retro-table-container {
+            border: 4px solid white;
+            box-shadow: 4px 4px 0px #000;
+            background: #0f172a;
+            overflow: auto;
+            flex: 1;
             width: 100%;
             display: flex;
             flex-direction: column;
         }
-        
-        .retro-table { 
-            width: 100%; 
-            border-collapse: separate; 
+
+        .retro-table {
+            width: 100%;
+            border-collapse: separate;
             border-spacing: 0;
-            font-family: 'VT323', monospace; 
-            font-size: 1.1rem; 
-            color: #4ade80; 
-            white-space: nowrap; 
+            font-family: "VT323", monospace;
+            font-size: 1.1rem;
+            color: #4ade80;
+            white-space: nowrap;
         }
-        
+
         .retro-table thead {
             position: sticky;
             top: 0;
             z-index: 20;
         }
 
-        .retro-table th { 
-            background: #1e293b; 
-            color: #fbbf24; 
-            text-transform: uppercase; 
-            padding: 8px; 
-            border-bottom: 2px solid #fff; 
+        .retro-table th {
+            background: #1e293b;
+            color: #fbbf24;
+            text-transform: uppercase;
+            padding: 8px;
+            border-bottom: 2px solid #fff;
             border-right: 1px solid #334155;
-            text-align: left; 
-            min-width: 180px; 
+            text-align: left;
+            min-width: 180px;
             vertical-align: top;
         }
-        .retro-table th.id-col { min-width: 60px; text-align: center; vertical-align: middle; }
+        .retro-table th.id-col {
+            min-width: 60px;
+            text-align: center;
+            vertical-align: middle;
+        }
 
         .header-content {
             display: flex;
@@ -125,43 +198,73 @@
         }
 
         .header-title {
-            font-family: 'Press Start 2P', cursive; 
-            font-size: 0.6rem; 
+            font-family: "Press Start 2P", cursive;
+            font-size: 0.6rem;
             letter-spacing: 1px;
             text-transform: uppercase;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
         }
-        .header-title:hover { color: white; }
+        .header-title:hover {
+            color: white;
+        }
 
-        .col-filter-input, .col-filter-select {
+        .col-filter-input,
+        .col-filter-select {
             width: 100%;
             background: #000;
             border: 1px solid #64748b;
             color: white;
             padding: 4px;
-            font-family: 'VT323', monospace;
+            font-family: "VT323", monospace;
             font-size: 0.9rem;
             outline: none;
         }
-        .col-filter-input:focus, .col-filter-select:focus { border-color: #fbbf24; }
-
-        .retro-table td { 
-            padding: 8px 12px; 
-            border-bottom: 1px solid #334155; 
-            border-right: 1px solid #334155;
-            background: #0f172a; 
+        .col-filter-input:focus,
+        .col-filter-select:focus {
+            border-color: #fbbf24;
         }
-        
-        .retro-table tr:hover td { background: #1e293b; color: white; cursor: crosshair; }
-        .retro-table .row-id { color: #94a3b8; font-family: monospace; text-align: center; }
-        
-        .auth-input { width: 100%; background: #000; border: 2px solid #fff; padding: 10px; color: #fff; font-family: 'VT323', monospace; font-size: 1.2rem; margin-bottom: 10px; }
-        .auth-input:focus { border-color: #fbbf24; outline: none; }
 
-        .sort-arrow { color: #fbbf24; font-size: 0.8rem; margin-left: 5px; }
-        
+        .retro-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #334155;
+            border-right: 1px solid #334155;
+            background: #0f172a;
+        }
+
+        .retro-table tr:hover td {
+            background: #1e293b;
+            color: white;
+            cursor: crosshair;
+        }
+        .retro-table .row-id {
+            color: #94a3b8;
+            font-family: monospace;
+            text-align: center;
+        }
+
+        .auth-input {
+            width: 100%;
+            background: #000;
+            border: 2px solid #fff;
+            padding: 10px;
+            color: #fff;
+            font-family: "VT323", monospace;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+        .auth-input:focus {
+            border-color: #fbbf24;
+            outline: none;
+        }
+
+        .sort-arrow {
+            color: #fbbf24;
+            font-size: 0.8rem;
+            margin-left: 5px;
+        }
+
         .captcha-container {
             display: flex;
             justify-content: center;
@@ -177,26 +280,26 @@
     <!-- FIREBASE INIT -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { 
-            getAuth, 
-            createUserWithEmailAndPassword, 
-            signInWithEmailAndPassword, 
-            signOut, 
-            onAuthStateChanged, 
-            sendPasswordResetEmail, 
-            sendEmailVerification 
+        import {
+            getAuth,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged,
+            sendPasswordResetEmail,
+            sendEmailVerification
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { 
-            getFirestore, 
-            collection, 
-            addDoc, 
-            getDocs, 
-            onSnapshot, 
-            query, 
-            orderBy, 
-            where, 
-            deleteDoc, 
-            updateDoc, 
+        import {
+            getFirestore,
+            collection,
+            addDoc,
+            getDocs,
+            onSnapshot,
+            query,
+            orderBy,
+            where,
+            deleteDoc,
+            updateDoc,
             doc,
             setDoc,
             getDoc
@@ -217,64 +320,177 @@
 
         window.db = db;
         window.auth = auth;
-        window.authFunctions = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification };
-        window.dbFunctions = { collection, addDoc, getDocs, onSnapshot, query, orderBy, where, deleteDoc, updateDoc, doc, setDoc, getDoc };
+        window.authFunctions = {
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged,
+            sendPasswordResetEmail,
+            sendEmailVerification
+        };
+        window.dbFunctions = {
+            collection,
+            addDoc,
+            getDocs,
+            onSnapshot,
+            query,
+            orderBy,
+            where,
+            deleteDoc,
+            updateDoc,
+            doc,
+            setDoc,
+            getDoc
+        };
     </script>
 
     <!-- APP CODE -->
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
-        
+
         const ADMIN_EMAIL = "i24lata@iimidr.ac.in";
         const REQUIRED_DOMAIN = "@iimidr.ac.in";
 
         /* ICONS */
-        const MapPin = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>;
-        const XIcon = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
-        const EditIcon = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
-        const BarChart3 = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>;
-        const Sun = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>;
-        const CloudRain = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="16" y1="13" x2="16" y2="21"></line><line x1="8" y1="13" x2="8" y2="21"></line><line x1="12" y1="15" x2="12" y2="23"></line><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"></path></svg>;
-        const Swords = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"></polyline><line x1="13" y1="19" x2="19" y2="13"></line><line x1="16" y1="16" x2="20" y2="20"></line><line x1="19" y1="21" x2="21" y2="19"></line></svg>;
-        const ArrowLeft = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
-        const Sparkles = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>;
-        const LogOut = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>;
-        const ChevronDown = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"></polyline></svg>;
-        const ProfileIcon = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-3.314 3.582-6 8-6s8 2.686 8 6"></path></svg>;
+        const MapPin = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+        );
+        const XIcon = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        );
+        const EditIcon = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+        );
+        const BarChart3 = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="12" y1="20" x2="12" y2="10"></line>
+                <line x1="18" y1="20" x2="18" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="16"></line>
+            </svg>
+        );
+        const Sun = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+        );
+        const CloudRain = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="16" y1="13" x2="16" y2="21"></line>
+                <line x1="8" y1="13" x2="8" y2="21"></line>
+                <line x1="12" y1="15" x2="12" y2="23"></line>
+                <path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"></path>
+            </svg>
+        );
+        const CloudIcon = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M17.5 19a4.5 4.5 0 0 0-1-8.9 5 5 0 0 0-9.7 1.4A3.5 3.5 0 0 0 7 19h10.5z"></path>
+            </svg>
+        );
+        const Moon = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 12.79A9 9 0 0 1 12.21 3 7 7 0 1 0 21 12.79z"></path>
+            </svg>
+        );
+        const Swords = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"></polyline>
+                <line x1="13" y1="19" x2="19" y2="13"></line>
+                <line x1="16" y1="16" x2="20" y2="20"></line>
+                <line x1="19" y1="21" x2="21" y2="19"></line>
+            </svg>
+        );
+        const ArrowLeft = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        );
+        const Sparkles = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
+            </svg>
+        );
+        const LogOut = () => (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+        );
+        const ChevronDown = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        );
+        const ProfileIcon = ({ className }) => (
+            <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="8" r="4"></circle>
+                <path d="M4 20c0-3.314 3.582-6 8-6s8 2.686 8 6"></path>
+            </svg>
+        );
 
         /* VENUES */
         const VENUES = [
-            { id: 's1', name: 'Badminton Court', category: 'Sports', x: 32, y: 25 },
-            { id: 's4', name: 'Cricket Cage', category: 'Sports', x: 35, y: 30 },
-            { id: 'a1', name: 'New Auditorium', category: 'Auditorium', x: 65, y: 32 },
-            { id: 'a3', name: 'New Audi Amphi', category: 'Auditorium', x: 70, y: 35 },
-            { id: 'a4', name: 'Old Audi Amphi', category: 'Auditorium', x: 75, y: 30 },
-            { id: 'c1', name: 'E-301 (Academic)', category: 'Classroom', x: 45, y: 50 },
-            { id: 'c2', name: 'E-303 (Academic)', category: 'Classroom', x: 50, y: 50 },
-            { id: 'st1', name: 'Studio', category: 'Studio', x: 55, y: 45 },
-            { id: 'a2', name: 'Old Auditorium', category: 'Auditorium', x: 42, y: 45 },
-            { id: 'c3', name: 'D-301 (Academic)', category: 'Classroom', x: 52, y: 55 },
-            { id: 's2', name: 'Tennis Court', category: 'Sports', x: 28, y: 65 },
-            { id: 's6', name: 'Squash Court', category: 'Sports', x: 32, y: 70 },
-            { id: 's3', name: 'Football Turf', category: 'Sports', x: 68, y: 68 },
-            { id: 's5', name: 'Table Tennis', category: 'Sports', x: 72, y: 65 },
+            { id: "s1", name: "Badminton Court", category: "Sports", x: 32, y: 25 },
+            { id: "s4", name: "Cricket Cage", category: "Sports", x: 35, y: 30 },
+            { id: "a1", name: "New Auditorium", category: "Auditorium", x: 65, y: 32 },
+            { id: "a3", name: "New Audi Amphi", category: "Auditorium", x: 70, y: 35 },
+            { id: "a4", name: "Old Audi Amphi", category: "Auditorium", x: 75, y: 30 },
+            { id: "c1", name: "E-301 (Academic)", category: "Classroom", x: 45, y: 50 },
+            { id: "c2", name: "E-303 (Academic)", category: "Classroom", x: 50, y: 50 },
+            { id: "st1", name: "Studio", category: "Studio", x: 55, y: 45 },
+            { id: "a2", name: "Old Auditorium", category: "Auditorium", x: 42, y: 45 },
+            { id: "c3", name: "D-301 (Academic)", category: "Classroom", x: 52, y: 55 },
+            { id: "s2", name: "Tennis Court", category: "Sports", x: 28, y: 65 },
+            { id: "s6", name: "Squash Court", category: "Sports", x: 32, y: 70 },
+            { id: "s3", name: "Football Turf", category: "Sports", x: 68, y: 68 },
+            { id: "s5", name: "Table Tennis", category: "Sports", x: 72, y: 65 }
         ];
 
-        const TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+        const TIME_SLOTS = [
+            "09:00",
+            "10:00",
+            "11:00",
+            "12:00",
+            "13:00",
+            "14:00",
+            "15:00",
+            "16:00",
+            "17:00",
+            "18:00",
+            "19:00"
+        ];
 
         /* TIME HELPERS */
         function getBookingInterval(booking) {
             if (!booking || !booking.date || !booking.time) return null;
             try {
-                const parts = booking.time.split('-');
+                const parts = booking.time.split("-");
                 if (!parts[0] || !parts[1]) return null;
 
                 const startStr = parts[0].trim();
                 const endStr = parts[1].trim();
 
-                const dateParts = booking.date.split('-').map(Number);
-                const shSm = startStr.split(':').map(Number);
-                const ehEm = endStr.split(':').map(Number);
+                const dateParts = booking.date.split("-").map(Number);
+                const shSm = startStr.split(":").map(Number);
+                const ehEm = endStr.split(":").map(Number);
 
                 const year = dateParts[0];
                 const month = dateParts[1];
@@ -302,8 +518,20 @@
         }
 
         /* GENERIC BUTTON */
-        const RetroButton = ({ children, onClick, className = "", variant = "primary", disabled = false, type = "submit" }) => {
-            const colors = { primary: 'bg-blue-600 hover:bg-blue-500', danger: 'bg-red-600 hover:bg-red-500', success: 'bg-green-600 hover:bg-green-500', neutral: 'bg-gray-600 hover:bg-gray-500' };
+        const RetroButton = ({
+            children,
+            onClick,
+            className = "",
+            variant = "primary",
+            disabled = false,
+            type = "submit"
+        }) => {
+            const colors = {
+                primary: "bg-blue-600 hover:bg-blue-500",
+                danger: "bg-red-600 hover:bg-red-500",
+                success: "bg-green-600 hover:bg-green-500",
+                neutral: "bg-gray-600 hover:bg-gray-500"
+            };
             return (
                 <button
                     type={type}
@@ -321,21 +549,25 @@
             return (
                 <div className="relative w-[600px] h-[600px] mx-auto animate-float select-none scale-90 md:scale-100">
                     <div className="absolute inset-0 rounded-full bg-blue-600/20 blur-3xl"></div>
-                    <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl relative z-10" shapeRendering="crispEdges">
+                    <svg
+                        viewBox="0 0 100 100"
+                        className="w-full h-full drop-shadow-2xl relative z-10"
+                        shapeRendering="crispEdges"
+                    >
                         <circle cx="50" cy="50" r="45" fill="#3b82f6" stroke="#1e3a8a" strokeWidth="1" />
                         {/* Landmasses */}
-                        <path d="M28,18 h16 v12 h-16 z" fill="#4ade80" /> 
-                        <path d="M58,26 h22 v12 h-22 z" fill="#4ade80" /> 
-                        <path d="M38,40 h24 v16 h-24 z" fill="#4ade80" /> 
-                        <path d="M24,58 h12 v14 h-12 z" fill="#4ade80" /> 
-                        <path d="M64,60 h14 v12 h-14 z" fill="#4ade80" /> 
+                        <path d="M28,18 h16 v12 h-16 z" fill="#4ade80" />
+                        <path d="M58,26 h22 v12 h-22 z" fill="#4ade80" />
+                        <path d="M38,40 h24 v16 h-24 z" fill="#4ade80" />
+                        <path d="M24,58 h12 v14 h-12 z" fill="#4ade80" />
+                        <path d="M64,60 h14 v12 h-14 z" fill="#4ade80" />
                         <rect x="15" y="35" width="10" height="3" fill="white" fillOpacity="0.7" />
                         <rect x="70" y="25" width="12" height="3" fill="white" fillOpacity="0.7" />
                         <rect x="40" y="80" width="15" height="3" fill="white" fillOpacity="0.7" />
                     </svg>
                     {venues.map((venue) => {
                         const hasActiveChallenge = bookings.some(
-                            b => b.venueId === venue.id && isChallengeActive(b, now)
+                            (b) => b.venueId === venue.id && isChallengeActive(b, now)
                         );
                         return (
                             <button
@@ -344,11 +576,15 @@
                                 style={{ top: `${venue.y}%`, left: `${venue.x}%` }}
                                 className="absolute transform -translate-x-1/2 -translate-y-1/2 group z-20 focus:outline-none"
                             >
-                                <div className={`flex flex-col items-center ${hasActiveChallenge ? 'animate-glow' : ''}`}>
+                                <div
+                                    className={`flex flex-col items-center ${
+                                        hasActiveChallenge ? "animate-glow" : ""
+                                    }`}
+                                >
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                                         <path
                                             d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z"
-                                            fill={hasActiveChallenge ? '#fbbf24' : '#ef4444'}
+                                            fill={hasActiveChallenge ? "#fbbf24" : "#ef4444"}
                                             stroke="white"
                                             strokeWidth="2"
                                         />
@@ -357,7 +593,9 @@
                                     <div className="absolute top-full mt-1 bg-black text-white text-[10px] px-2 py-1 border border-white whitespace-nowrap opacity-0 group-hover:opacity-100 retro-font pointer-events-none z-30">
                                         {venue.name}
                                         {hasActiveChallenge && (
-                                            <span className="text-yellow-400 block text-[8px]">OPEN CHALLENGE LIVE</span>
+                                            <span className="text-yellow-400 block text-[8px]">
+                                                OPEN CHALLENGE LIVE
+                                            </span>
                                         )}
                                     </div>
                                 </div>
@@ -371,21 +609,23 @@
         /* AUTH (NOW WITH PHONE + VERIFY + RESET) */
         const AuthScreen = () => {
             const [isLogin, setIsLogin] = useState(true);
-            const [email, setEmail] = useState('');
-            const [password, setPassword] = useState('');
-            const [phone, setPhone] = useState('');
-            const [error, setError] = useState('');
+            const [email, setEmail] = useState("");
+            const [password, setPassword] = useState("");
+            const [phone, setPhone] = useState("");
+            const [error, setError] = useState("");
             const recaptchaRef = useRef(null);
 
             useEffect(() => {
                 const interval = setInterval(() => {
                     if (window.grecaptcha && window.grecaptcha.render && !recaptchaRef.current) {
                         try {
-                            recaptchaRef.current = window.grecaptcha.render('recaptcha-container', {
-                                sitekey: '6LeNuh0sAAAAAG_t-Y5vgdUKBc319CTNjQPwq0pj',
-                                callback: () => setError(''),
-                                'expired-callback': () => setError('CAPTCHA expired. Please verify again.'),
-                                'error-callback': () => setError('CAPTCHA failed. Please check your connection.')
+                            recaptchaRef.current = window.grecaptcha.render("recaptcha-container", {
+                                sitekey: "6LeNuh0sAAAAAG_t-Y5vgdUKBc319CTNjQPwq0pj",
+                                callback: () => setError(""),
+                                "expired-callback": () =>
+                                    setError("CAPTCHA expired. Please verify again."),
+                                "error-callback": () =>
+                                    setError("CAPTCHA failed. Please check your connection.")
                             });
                             clearInterval(interval);
                         } catch (e) {
@@ -399,7 +639,7 @@
             useEffect(() => {
                 if (window.grecaptcha && recaptchaRef.current !== null) {
                     window.grecaptcha.reset(recaptchaRef.current);
-                    setError('');
+                    setError("");
                 }
             }, [isLogin]);
 
@@ -421,7 +661,7 @@
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
-                setError('');
+                setError("");
 
                 if (!validateCaptcha()) {
                     setError("Please complete the CAPTCHA.");
@@ -436,31 +676,58 @@
 
                 try {
                     if (isLogin) {
-                        const cred = await window.authFunctions.signInWithEmailAndPassword(window.auth, email, password);
+                        const cred = await window.authFunctions.signInWithEmailAndPassword(
+                            window.auth,
+                            email,
+                            password
+                        );
                         if (!cred.user.emailVerified && cred.user.email !== ADMIN_EMAIL) {
                             await window.authFunctions.signOut(window.auth);
                             resetCaptcha();
-                            setError("ACCESS DENIED: Please verify your email address. Verification link has already been sent.");
+                            setError(
+                                "ACCESS DENIED: Please verify your email address. Verification link has already been sent."
+                            );
                             return;
                         }
                     } else {
-                        const cred = await window.authFunctions.createUserWithEmailAndPassword(window.auth, email, password);
-                        const name = email.split('@')[0];
-                        const userDoc = window.dbFunctions.doc(window.db, "userProfiles", cred.user.uid);
-                        await window.dbFunctions.setDoc(userDoc, { email, name, phone: phone || '' });
+                        const cred = await window.authFunctions.createUserWithEmailAndPassword(
+                            window.auth,
+                            email,
+                            password
+                        );
+                        const name = email.split("@")[0];
+                        const userDoc = window.dbFunctions.doc(
+                            window.db,
+                            "userProfiles",
+                            cred.user.uid
+                        );
+                        await window.dbFunctions.setDoc(userDoc, {
+                            email,
+                            name,
+                            phone: phone || ""
+                        });
                         await window.authFunctions.sendEmailVerification(cred.user);
                         await window.authFunctions.signOut(window.auth);
-                        alert("Account Created! A verification email has been sent. Please verify before logging in.");
+                        alert(
+                            "Account Created! A verification email has been sent. Please verify before logging in."
+                        );
                         setIsLogin(true);
                         resetCaptcha();
                     }
                 } catch (err) {
                     console.error("Auth error:", err);
                     let msg = "SYSTEM ERROR";
-                    if (err.code === 'auth/operation-not-allowed') msg = "Enable Email/Password in Firebase Console.";
-                    else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') msg = "ACCESS DENIED: Invalid credentials.";
-                    else if (err.code === 'auth/user-not-found') msg = "User not found. Please sign up.";
-                    else if (err.code === 'auth/email-already-in-use') msg = "Email already registered.";
+                    if (err.code === "auth/operation-not-allowed")
+                        msg = "Enable Email/Password in Firebase Console.";
+                    else if (
+                        err.code === "auth/invalid-credential" ||
+                        err.code === "auth/wrong-password"
+                    )
+                        msg = "ACCESS DENIED: Invalid credentials.";
+                    else if (err.code === "auth/user-not-found")
+                        msg = "User not found. Please sign up.";
+                    else if (err.code === "auth/email-already-in-use")
+                        msg = "Email already registered.";
                     else msg = err.message;
 
                     setError(msg);
@@ -469,48 +736,100 @@
             };
 
             const handleReset = async () => {
-                if (!email) { setError("ENTER EMAIL TO RESET PASSWORD"); return; }
-                if (!isAllowedEmail(email)) { setError(`Password reset is only for ${REQUIRED_DOMAIN} emails (or admin).`); return; }
+                if (!email) {
+                    setError("ENTER EMAIL TO RESET PASSWORD");
+                    return;
+                }
+                if (!isAllowedEmail(email)) {
+                    setError(
+                        `Password reset is only for ${REQUIRED_DOMAIN} emails (or admin).`
+                    );
+                    return;
+                }
                 try {
                     await window.authFunctions.sendPasswordResetEmail(window.auth, email);
                     alert("RESET LINK SENT to your registered IIM Indore email.");
-                } catch (err) { setError(err.message); }
+                } catch (err) {
+                    setError(err.message);
+                }
             };
 
             return (
                 <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden text-white z-10">
                     <div className="z-10 text-center mb-8 animate-float">
-                        <h1 className="text-4xl md:text-6xl text-yellow-400 mb-2 pixel-text-shadow retro-font">PLANET-I</h1>
-                        <p className="text-xl text-blue-300 tracking-widest uppercase retro-font">Booking System</p>
+                        <h1 className="text-4xl md:text-6xl text-yellow-400 mb-2 pixel-text-shadow retro-font">
+                            PLANET-I
+                        </h1>
+                        <p className="text-xl text-blue-300 tracking-widest uppercase retro-font">
+                            Booking System
+                        </p>
                     </div>
                     <div className="z-10 bg-[#1e293b] p-8 border-4 border-white shadow-[8px_8px_0px_rgba(0,0,0,0.5)] max-w-md w-full">
                         <div className="flex justify-between mb-6 border-b-2 border-gray-600 pb-2">
                             <button
-                                onClick={() => { setIsLogin(true); setError(''); }}
-                                className={`retro-font text-sm ${isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}
+                                onClick={() => {
+                                    setIsLogin(true);
+                                    setError("");
+                                }}
+                                className={`retro-font text-sm ${
+                                    isLogin
+                                        ? "text-yellow-400"
+                                        : "text-gray-400 hover:text-white"
+                                }`}
                             >
                                 LOGIN
                             </button>
                             <button
-                                onClick={() => { setIsLogin(false); setError(''); }}
-                                className={`retro-font text-sm ${!isLogin ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}
+                                onClick={() => {
+                                    setIsLogin(false);
+                                    setError("");
+                                }}
+                                className={`retro-font text-sm ${
+                                    !isLogin
+                                        ? "text-yellow-400"
+                                        : "text-gray-400 hover:text-white"
+                                }`}
                             >
                                 SIGN UP
                             </button>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-xs text-gray-400 mb-1 retro-font">INSTITUTE ID</label>
-                                <input type="email" className="auth-input" value={email} onChange={e => setEmail(e.target.value)} required />
+                                <label className="block text-xs text-gray-400 mb-1 retro-font">
+                                    INSTITUTE ID
+                                </label>
+                                <input
+                                    type="email"
+                                    className="auth-input"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                />
                             </div>
                             <div>
-                                <label className="block text-xs text-gray-400 mb-1 retro-font">PASSWORD</label>
-                                <input type="password" className="auth-input" value={password} onChange={e => setPassword(e.target.value)} required />
+                                <label className="block text-xs text-gray-400 mb-1 retro-font">
+                                    PASSWORD
+                                </label>
+                                <input
+                                    type="password"
+                                    className="auth-input"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                />
                             </div>
                             {!isLogin && (
                                 <div>
-                                    <label className="block text-xs text-gray-400 mb-1 retro-font">PHONE NUMBER</label>
-                                    <input type="tel" className="auth-input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="Optional but recommended" />
+                                    <label className="block text-xs text-gray-400 mb-1 retro-font">
+                                        PHONE NUMBER
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        className="auth-input"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        placeholder="Optional but recommended"
+                                    />
                                 </div>
                             )}
 
@@ -518,10 +837,14 @@
                                 <div id="recaptcha-container"></div>
                             </div>
 
-                            {error && <p className="text-red-500 text-xs font-bold text-center">{error}</p>}
+                            {error && (
+                                <p className="text-red-500 text-xs font-bold text-center">
+                                    {error}
+                                </p>
+                            )}
 
                             <RetroButton className="w-full mt-2">
-                                {isLogin ? 'AUTHENTICATE' : 'REGISTER ID'}
+                                {isLogin ? "AUTHENTICATE" : "REGISTER ID"}
                             </RetroButton>
                         </form>
                         {isLogin && (
@@ -539,7 +862,7 @@
 
         /* PROFILE MODAL */
         const ProfileModal = ({ user, onClose, onSave }) => {
-            const [phone, setPhone] = useState(user.phone || '');
+            const [phone, setPhone] = useState(user.phone || "");
             const [saving, setSaving] = useState(false);
 
             const handleSave = async () => {
@@ -555,31 +878,52 @@
                             <h2 className="text-lg text-white flex items-center gap-2 uppercase retro-font">
                                 <ProfileIcon /> PROFILE
                             </h2>
-                            <button onClick={onClose}><XIcon className="text-white hover:text-red-400" /></button>
+                            <button onClick={onClose}>
+                                <XIcon className="text-white hover:text-red-400" />
+                            </button>
                         </div>
                         <div className="p-6 space-y-4 text-sm">
                             <div>
-                                <p className="text-xs text-gray-400 uppercase retro-font mb-1">USERNAME</p>
+                                <p className="text-xs text-gray-400 uppercase retro-font mb-1">
+                                    USERNAME
+                                </p>
                                 <p className="text-green-400 text-base">{user.name}</p>
                             </div>
                             <div>
-                                <p className="text-xs text-gray-400 uppercase retro-font mb-1">EMAIL</p>
-                                <p className="text-blue-300 text-base lowercase">{user.email}</p>
+                                <p className="text-xs text-gray-400 uppercase retro-font mb-1">
+                                    EMAIL
+                                </p>
+                                <p className="text-blue-300 text-base lowercase">
+                                    {user.email}
+                                </p>
                             </div>
                             <div>
-                                <p className="text-xs text-gray-400 uppercase retro-font mb-1">PHONE NUMBER</p>
+                                <p className="text-xs text-gray-400 uppercase retro-font mb-1">
+                                    PHONE NUMBER
+                                </p>
                                 <input
                                     type="tel"
                                     className="w-full bg-black border-2 border-white p-2 text-white"
                                     value={phone}
-                                    onChange={e => setPhone(e.target.value)}
+                                    onChange={(e) => setPhone(e.target.value)}
                                     placeholder="Enter / update phone"
                                 />
                             </div>
                             <div className="flex justify-end gap-3 pt-2">
-                                <RetroButton variant="neutral" type="button" onClick={onClose}>CLOSE</RetroButton>
-                                <RetroButton variant="success" type="button" onClick={handleSave} disabled={saving}>
-                                    {saving ? 'SAVING...' : 'SAVE'}
+                                <RetroButton
+                                    variant="neutral"
+                                    type="button"
+                                    onClick={onClose}
+                                >
+                                    CLOSE
+                                </RetroButton>
+                                <RetroButton
+                                    variant="success"
+                                    type="button"
+                                    onClick={handleSave}
+                                    disabled={saving}
+                                >
+                                    {saving ? "SAVING..." : "SAVE"}
                                 </RetroButton>
                             </div>
                         </div>
@@ -590,23 +934,35 @@
 
         /* BOOKING MODAL */
         const BookingModal = ({ venue, bookingToEdit, onClose, onConfirm }) => {
-            const [date, setDate] = useState(bookingToEdit ? bookingToEdit.date : '');
-            const [time, setTime] = useState(bookingToEdit ? bookingToEdit.time : '');
-            const [openChallenge, setOpenChallenge] = useState(bookingToEdit ? bookingToEdit.openChallenge : false);
-            const [purpose, setPurpose] = useState(bookingToEdit ? bookingToEdit.purpose : '');
-            const maxDays = venue.category === 'Sports' ? 2 : venue.category === 'Auditorium' ? 7 : 30;
-            const today = new Date().toISOString().split('T')[0];
-            const maxDateObj = new Date(); maxDateObj.setDate(maxDateObj.getDate() + maxDays);
-            const maxDateStr = maxDateObj.toISOString().split('T')[0];
+            const [date, setDate] = useState(bookingToEdit ? bookingToEdit.date : "");
+            const [time, setTime] = useState(bookingToEdit ? bookingToEdit.time : "");
+            const [openChallenge, setOpenChallenge] = useState(
+                bookingToEdit ? bookingToEdit.openChallenge : false
+            );
+            const [purpose, setPurpose] = useState(
+                bookingToEdit ? bookingToEdit.purpose : ""
+            );
+            const maxDays =
+                venue.category === "Sports"
+                    ? 2
+                    : venue.category === "Auditorium"
+                    ? 7
+                    : 30;
+            const today = new Date().toISOString().split("T")[0];
+            const maxDateObj = new Date();
+            maxDateObj.setDate(maxDateObj.getDate() + maxDays);
+            const maxDateStr = maxDateObj.toISOString().split("T")[0];
 
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 font-mono backdrop-blur-sm">
                     <div className="bg-[#1e293b] border-4 border-white text-white w-full max-w-lg shadow-[10px_10px_0px_#000]">
                         <div className="bg-blue-700 p-4 border-b-4 border-white flex justify-between items-center">
                             <h2 className="text-lg text-white flex items-center gap-2 uppercase retro-font">
-                                <MapPin /> {bookingToEdit ? 'EDIT: ' : ''}{venue.name}
+                                <MapPin /> {bookingToEdit ? "EDIT: " : ""} {venue.name}
                             </h2>
-                            <button onClick={onClose}><XIcon className="text-white hover:text-red-400" /></button>
+                            <button onClick={onClose}>
+                                <XIcon className="text-white hover:text-red-400" />
+                            </button>
                         </div>
                         <div className="p-6 space-y-6">
                             <div className="grid grid-cols-2 gap-4">
@@ -620,19 +976,24 @@
                                         max={maxDateStr}
                                         className="w-full bg-black border-2 border-white p-2 text-white"
                                         value={date}
-                                        onChange={e => setDate(e.target.value)}
+                                        onChange={(e) => setDate(e.target.value)}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-green-400 mb-2 uppercase text-xs retro-font">Time Slot</label>
+                                    <label className="block text-green-400 mb-2 uppercase text-xs retro-font">
+                                        Time Slot
+                                    </label>
                                     <select
                                         className="w-full bg-black border-2 border-white p-2 text-white h-[42px]"
                                         value={time}
-                                        onChange={e => setTime(e.target.value)}
+                                        onChange={(e) => setTime(e.target.value)}
                                     >
                                         <option value="">Select...</option>
-                                        {TIME_SLOTS.map(t => (
-                                            <option key={t} value={t + " - " + (parseInt(t, 10) + 1) + ":00"}>
+                                        {TIME_SLOTS.map((t) => (
+                                            <option
+                                                key={t}
+                                                value={`${t} - ${parseInt(t, 10) + 1}:00`}
+                                            >
                                                 {t} - {parseInt(t, 10) + 1}:00
                                             </option>
                                         ))}
@@ -648,10 +1009,10 @@
                                     className="w-full bg-black border-2 border-white p-2 text-white"
                                     placeholder="e.g. Club Meeting"
                                     value={purpose}
-                                    onChange={e => setPurpose(e.target.value)}
+                                    onChange={(e) => setPurpose(e.target.value)}
                                 />
                             </div>
-                            {venue.category === 'Sports' && (
+                            {venue.category === "Sports" && (
                                 <div className="border-2 border-yellow-600 bg-yellow-900/20 p-3 flex items-center justify-between">
                                     <label className="text-yellow-400 uppercase text-xs font-bold retro-font flex items-center gap-2">
                                         <Swords /> Open Challenge?
@@ -659,12 +1020,14 @@
                                     <button
                                         onClick={() => setOpenChallenge(!openChallenge)}
                                         className={`w-12 h-6 border-2 border-white flex items-center px-1 transition-colors ${
-                                            openChallenge ? 'bg-green-500 justify-end' : 'bg-red-500 justify-start'
+                                            openChallenge
+                                                ? "bg-green-500 justify-end"
+                                                : "bg-red-500 justify-start"
                                         }`}
                                     >
                                         <div
                                             className={`w-4 h-4 bg-white border border-black ${
-                                                openChallenge ? 'bg-green-500' : ''
+                                                openChallenge ? "bg-green-500" : ""
                                             }`}
                                         ></div>
                                     </button>
@@ -685,7 +1048,7 @@
                                 variant="success"
                                 type="button"
                             >
-                                {bookingToEdit ? 'UPDATE BOOKING' : 'CONFIRM BOOKING'}
+                                {bookingToEdit ? "UPDATE BOOKING" : "CONFIRM BOOKING"}
                             </RetroButton>
                         </div>
                     </div>
@@ -694,7 +1057,15 @@
         };
 
         /* CHALLENGE MODAL (VIEW + COMMIT) */
-        const ChallengeModal = ({ venue, challenges, currentUser, challengeRequests, onClose, onBook, onCommit }) => {
+        const ChallengeModal = ({
+            venue,
+            challenges,
+            currentUser,
+            challengeRequests,
+            onClose,
+            onBook,
+            onCommit
+        }) => {
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 font-mono backdrop-blur-sm">
                     <div className="bg-[#1e293b] border-4 border-white text-white w-full max-w-xl shadow-[10px_10px_0px_#000]">
@@ -702,16 +1073,20 @@
                             <h2 className="text-lg text-black flex items-center gap-2 uppercase retro-font">
                                 <Swords /> OPEN CHALLENGE @ {venue.name}
                             </h2>
-                            <button onClick={onClose}><XIcon className="text-black hover:text-red-700" /></button>
+                            <button onClick={onClose}>
+                                <XIcon className="text-black hover:text-red-700" />
+                            </button>
                         </div>
                         <div className="p-6 space-y-4">
                             <p className="text-xs text-gray-300 uppercase retro-font mb-2">
                                 LIVE / UPCOMING CHALLENGES FOR THIS SLOT
                             </p>
                             {challenges.map((c) => {
-                                const when = c.date + " • " + c.time;
+                                const when = `${c.date} • ${c.time}`;
                                 const isOwner = currentUser && c.email === currentUser.email;
-                                const alreadyCommitted = challengeRequests.some(req => req.bookingId === c.id);
+                                const alreadyCommitted = challengeRequests.some(
+                                    (req) => req.bookingId === c.id
+                                );
                                 return (
                                     <div
                                         key={c.id}
@@ -720,18 +1095,34 @@
                                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                                             <div>
                                                 <div className="text-sm text-green-400 retro-font">
-                                                    {c.user} <span className="text-gray-400 lowercase">({c.email})</span>
+                                                    {c.user}{" "}
+                                                    <span className="text-gray-400 lowercase">
+                                                        ({c.email})
+                                                    </span>
                                                 </div>
                                                 <div className="text-xs text-yellow-300 mt-1 font-mono">
                                                     {when}
                                                 </div>
                                                 <div className="text-xs text-gray-200 mt-2">
-                                                    Purpose: <span className="font-mono">{c.purpose || 'N/A'}</span>
+                                                    Purpose:{" "}
+                                                    <span className="font-mono">
+                                                        {c.purpose || "N/A"}
+                                                    </span>
                                                 </div>
                                             </div>
                                             <div className="text-[10px] uppercase text-right text-gray-400">
-                                                <div>STATUS: <span className="text-green-400">ACTIVE / FLAGGED</span></div>
-                                                <div>TYPE: <span className="text-yellow-300">OPEN CHALLENGE</span></div>
+                                                <div>
+                                                    STATUS:{" "}
+                                                    <span className="text-green-400">
+                                                        ACTIVE / FLAGGED
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    TYPE:{" "}
+                                                    <span className="text-yellow-300">
+                                                        OPEN CHALLENGE
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -754,15 +1145,17 @@
                                         )}
                                         {isOwner && (
                                             <p className="text-[10px] text-blue-300 mt-1">
-                                                You created this challenge. Challengers will appear under <span className="font-bold">MY BOOKINGS</span>.
+                                                You created this challenge. Challengers will appear
+                                                under <span className="font-bold">MY BOOKINGS</span>.
                                             </p>
                                         )}
                                     </div>
                                 );
                             })}
                             <p className="text-[10px] text-gray-400 mt-2">
-                                Glow on the map indicates a challenge is currently active in this time window. Once the booking
-                                time is over, the pin will stop glowing automatically.
+                                Glow on the map indicates a challenge is currently active in this
+                                time window. Once the booking time is over, the pin will stop
+                                glowing automatically.
                             </p>
                             <div className="mt-4 flex justify-between gap-3">
                                 <RetroButton variant="neutral" type="button" onClick={onClose}>
@@ -778,61 +1171,87 @@
             );
         };
 
-        /* UPCOMING CHALLENGES PANEL */
+        /* UPCOMING CHALLENGES PANEL (collapsible) */
         const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
+            const [isOpen, setIsOpen] = useState(true);
+
             const upcoming = bookings
-                .filter(b => b.openChallenge)
-                .map(b => ({ booking: b, interval: getBookingInterval(b) }))
-                .filter(x => x.interval && x.interval.end >= now)
+                .filter((b) => b.openChallenge)
+                .map((b) => ({ booking: b, interval: getBookingInterval(b) }))
+                .filter((x) => x.interval && x.interval.end >= now)
                 .sort((a, b) => a.interval.start - b.interval.start)
                 .slice(0, 6);
 
             return (
                 <div className="absolute bottom-4 right-4 w-80 bg-black/80 border-2 border-yellow-400 shadow-[6px_6px_0_#000] p-3 text-xs font-mono z-30">
-                    <div className="flex items-center justify-between mb-2">
+                    <button
+                        type="button"
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="flex items-center justify-between mb-2 w-full cursor-pointer"
+                    >
                         <div className="flex items-center gap-2">
-                            <Swords className="w-4 h-4 text-yellow-300" />
+                            {/* dual swords vibe */}
+                            <div className="flex items-center">
+                                <Swords className="w-4 h-4 text-yellow-300" />
+                                <Swords className="w-4 h-4 text-yellow-300 -scale-x-100 -ml-1" />
+                            </div>
                             <span className="text-[10px] text-yellow-300 uppercase retro-font">
                                 UPCOMING OPEN CHALLENGES
                             </span>
                         </div>
-                        <Sparkles className="w-4 h-4 text-white" />
-                    </div>
-                    {upcoming.length === 0 ? (
-                        <p className="text-[10px] text-gray-400">No current or upcoming open challenges.</p>
-                    ) : (
-                        <div className="max-h-56 overflow-y-auto space-y-2">
-                            {upcoming.map(({ booking }) => {
-                                const venue = VENUES.find(v => v.id === booking.venueId);
-                                const venueName = venue ? venue.name : booking.venueName;
-                                return (
-                                    <button
-                                        key={booking.id}
-                                        onClick={() => {
-                                            const v = venue || { id: booking.venueId, name: booking.venueName, category: 'Sports' };
-                                            onSelect(v, [booking]);
-                                        }}
-                                        className="w-full text-left bg-[#0b1120] border border-white/30 px-2 py-2 hover:bg-white/10 transition-colors"
-                                    >
-                                        <div className="flex justify-between">
-                                            <span className="text-[10px] text-green-400 uppercase truncate mr-2">
-                                                {venueName}
-                                            </span>
-                                            <span className="text-[10px] text-gray-300">
-                                                {booking.date}
-                                            </span>
-                                        </div>
-                                        <div className="text-[10px] text-yellow-300 mt-1">
-                                            {booking.time}
-                                        </div>
-                                        <div className="text-[9px] text-gray-400 lowercase mt-1 truncate">
-                                            by {booking.user} ({booking.email})
-                                        </div>
-                                    </button>
-                                );
-                            })}
+                        <div className="flex items-center gap-1">
+                            <Sparkles className="w-4 h-4 text-white" />
+                            <ChevronDown
+                                className={`w-3 h-3 text-yellow-300 transition-transform ${
+                                    isOpen ? "rotate-180" : ""
+                                }`}
+                            />
                         </div>
-                    )}
+                    </button>
+
+                    {isOpen &&
+                        (upcoming.length === 0 ? (
+                            <p className="text-[10px] text-gray-400">
+                                No current or upcoming open challenges.
+                            </p>
+                        ) : (
+                            <div className="max-h-56 overflow-y-auto space-y-2">
+                                {upcoming.map(({ booking }) => {
+                                    const venue = VENUES.find((v) => v.id === booking.venueId);
+                                    const venueName = venue ? venue.name : booking.venueName;
+                                    return (
+                                        <button
+                                            key={booking.id}
+                                            onClick={() => {
+                                                const v =
+                                                    venue || {
+                                                        id: booking.venueId,
+                                                        name: booking.venueName,
+                                                        category: "Sports"
+                                                    };
+                                                onSelect(v, [booking]);
+                                            }}
+                                            className="w-full text-left bg-[#0b1120] border border-white/30 px-2 py-2 hover:bg-white/10 transition-colors"
+                                        >
+                                            <div className="flex justify-between">
+                                                <span className="text-[10px] text-green-400 uppercase truncate mr-2">
+                                                    {venueName}
+                                                </span>
+                                                <span className="text-[10px] text-gray-300">
+                                                    {booking.date}
+                                                </span>
+                                            </div>
+                                            <div className="text-[10px] text-yellow-300 mt-1">
+                                                {booking.time}
+                                            </div>
+                                            <div className="text-[9px] text-gray-400 lowercase mt-1 truncate">
+                                                by {booking.user} ({booking.email})
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        ))}
                 </div>
             );
         };
@@ -840,24 +1259,42 @@
         /* MAIN APP */
         const PixelPlanetApp = () => {
             const [user, setUser] = useState(null);
-            const [view, setView] = useState('map');
+            const [view, setView] = useState("map");
             const [selectedVenue, setSelectedVenue] = useState(null);
             const [editingBooking, setEditingBooking] = useState(null);
             const [bookings, setBookings] = useState([]);
             const [time, setTime] = useState(new Date());
-            const [weather, setWeather] = useState({ temp: '--', desc: 'Loading...', aqi: '--' });
-            const [aiInsight, setAiInsight] = useState("System Idle. Waiting for data...");
+            const [weather, setWeather] = useState({
+                temp: "--",
+                desc: "Loading...",
+                aqi: "--",
+                code: 0
+            });
+            const [aiInsight, setAiInsight] = useState(
+                "System Idle. Waiting for data..."
+            );
             const [expandedCat, setExpandedCat] = useState(null);
             const [showProfile, setShowProfile] = useState(false);
 
             const [sortOrder, setSortOrder] = useState("asc");
-            const [sortColumn, setSortColumn] = useState("date"); 
-            const [colFilters, setColFilters] = useState({ venue: '', date: '', time: '', user: '', email: '', purpose: '', challenge: '', bookedAt: '' });
+            const [sortColumn, setSortColumn] = useState("date");
+            const [colFilters, setColFilters] = useState({
+                venue: "",
+                date: "",
+                time: "",
+                user: "",
+                email: "",
+                purpose: "",
+                challenge: "",
+                bookedAt: "",
+                phone: ""
+            });
 
             const [challengeInfo, setChallengeInfo] = useState(null);
 
             const [myChallengeRequests, setMyChallengeRequests] = useState([]);
-            const [incomingChallengeRequests, setIncomingChallengeRequests] = useState([]);
+            const [incomingChallengeRequests, setIncomingChallengeRequests] =
+                useState([]);
 
             /* AUTH + LOAD PROFILE */
             useEffect(() => {
@@ -867,21 +1304,36 @@
                         window.authFunctions.onAuthStateChanged(window.auth, (u) => {
                             const loadProfile = async () => {
                                 if (u && (u.emailVerified || u.email === ADMIN_EMAIL)) {
-                                    const name = u.email.split('@')[0];
-                                    let phone = '';
+                                    const name = u.email.split("@")[0];
+                                    let phone = "";
                                     try {
-                                        const userDocRef = window.dbFunctions.doc(window.db, "userProfiles", u.uid);
-                                        const snap = await window.dbFunctions.getDoc(userDocRef);
+                                        const userDocRef = window.dbFunctions.doc(
+                                            window.db,
+                                            "userProfiles",
+                                            u.uid
+                                        );
+                                        const snap =
+                                            await window.dbFunctions.getDoc(userDocRef);
                                         if (snap.exists()) {
                                             const data = snap.data();
-                                            phone = data.phone || '';
+                                            phone = data.phone || "";
                                         } else {
-                                            await window.dbFunctions.setDoc(userDocRef, { email: u.email, name, phone: '' });
+                                            await window.dbFunctions.setDoc(userDocRef, {
+                                                email: u.email,
+                                                name,
+                                                phone: ""
+                                            });
                                         }
                                     } catch (e) {
                                         console.log("Profile load error", e);
                                     }
-                                    setUser({ uid: u.uid, name, email: u.email, role: 'Student', phone });
+                                    setUser({
+                                        uid: u.uid,
+                                        name,
+                                        email: u.email,
+                                        role: "Student",
+                                        phone
+                                    });
                                 } else {
                                     setUser(null);
                                 }
@@ -891,19 +1343,45 @@
                     }
                 }, 100);
 
-                const timer = setInterval(() => setTime(new Date()), 60000);
+                const timer = setInterval(
+                    () => setTime(new Date()),
+                    60000
+                );
+
                 const fetchWeather = async () => {
                     try {
-                        const w = await fetch('https://api.open-meteo.com/v1/forecast?latitude=22.63&longitude=75.80&current=temperature_2m,weather_code');
+                        const w = await fetch(
+                            "https://api.open-meteo.com/v1/forecast?latitude=22.63&longitude=75.80&current=temperature_2m,weather_code"
+                        );
                         const wd = await w.json();
-                        const a = await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude=22.63&longitude=75.80&current=us_aqi');
+                        const a = await fetch(
+                            "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=22.63&longitude=75.80&current=us_aqi"
+                        );
                         const ad = await a.json();
-                        const descMap = { 0: 'Clear', 1: 'Mainly Clear', 2: 'Partly Cloudy', 3: 'Overcast', 45: 'Fog', 61: 'Rain' };
-                        setWeather({ temp: wd.current.temperature_2m, desc: descMap[wd.current.weather_code] || 'Cloudy', aqi: ad.current.us_aqi });
-                    } catch (e) { setWeather({ temp: '28', desc: 'Clear', aqi: '45' }); }
+                        const descMap = {
+                            0: "Clear",
+                            1: "Mainly Clear",
+                            2: "Partly Cloudy",
+                            3: "Overcast",
+                            45: "Fog",
+                            61: "Rain"
+                        };
+                        setWeather({
+                            temp: wd.current.temperature_2m,
+                            desc: descMap[wd.current.weather_code] || "Cloudy",
+                            aqi: ad.current.us_aqi,
+                            code: wd.current.weather_code
+                        });
+                    } catch (e) {
+                        setWeather({ temp: "28", desc: "Clear", aqi: "45", code: 0 });
+                    }
                 };
                 fetchWeather();
-                return () => { clearInterval(checkAuth); clearInterval(timer); };
+
+                return () => {
+                    clearInterval(checkAuth);
+                    clearInterval(timer);
+                };
             }, []);
 
             /* BOOKINGS STREAM */
@@ -915,7 +1393,9 @@
                 );
                 const unsubscribe = window.dbFunctions.onSnapshot(q, (snapshot) => {
                     const loaded = [];
-                    snapshot.forEach((docSnap) => loaded.push({ id: docSnap.id, ...docSnap.data() }));
+                    snapshot.forEach((docSnap) =>
+                        loaded.push({ id: docSnap.id, ...docSnap.data() })
+                    );
                     setBookings(loaded);
                 });
                 return () => unsubscribe();
@@ -935,51 +1415,81 @@
                     window.dbFunctions.where("hostEmail", "==", user.email)
                 );
 
-                const unsubChallenger = window.dbFunctions.onSnapshot(challengerQuery, (snapshot) => {
-                    const loaded = [];
-                    snapshot.forEach((docSnap) => loaded.push({ id: docSnap.id, ...docSnap.data() }));
-                    loaded.sort((a, b) => {
-                        const ta = a.createdAt && typeof a.createdAt.toDate === 'function' ? a.createdAt.toDate().getTime() : 0;
-                        const tb = b.createdAt && typeof b.createdAt.toDate === 'function' ? b.createdAt.toDate().getTime() : 0;
-                        return tb - ta;
-                    });
-                    setMyChallengeRequests(loaded);
-                });
+                const unsubChallenger = window.dbFunctions.onSnapshot(
+                    challengerQuery,
+                    (snapshot) => {
+                        const loaded = [];
+                        snapshot.forEach((docSnap) =>
+                            loaded.push({ id: docSnap.id, ...docSnap.data() })
+                        );
+                        loaded.sort((a, b) => {
+                            const ta =
+                                a.createdAt &&
+                                typeof a.createdAt.toDate === "function"
+                                    ? a.createdAt.toDate().getTime()
+                                    : 0;
+                            const tb =
+                                b.createdAt &&
+                                typeof b.createdAt.toDate === "function"
+                                    ? b.createdAt.toDate().getTime()
+                                    : 0;
+                            return tb - ta;
+                        });
+                        setMyChallengeRequests(loaded);
+                    }
+                );
 
                 const unsubHost = window.dbFunctions.onSnapshot(hostQuery, (snapshot) => {
                     const loaded = [];
-                    snapshot.forEach((docSnap) => loaded.push({ id: docSnap.id, ...docSnap.data() }));
+                    snapshot.forEach((docSnap) =>
+                        loaded.push({ id: docSnap.id, ...docSnap.data() })
+                    );
                     loaded.sort((a, b) => {
-                        const ta = a.createdAt && typeof a.createdAt.toDate === 'function' ? a.createdAt.toDate().getTime() : 0;
-                        const tb = b.createdAt && typeof b.createdAt.toDate === 'function' ? b.createdAt.toDate().getTime() : 0;
+                        const ta =
+                            a.createdAt &&
+                            typeof a.createdAt.toDate === "function"
+                                ? a.createdAt.toDate().getTime()
+                                : 0;
+                        const tb =
+                            b.createdAt &&
+                            typeof b.createdAt.toDate === "function"
+                                ? b.createdAt.toDate().getTime()
+                                : 0;
                         return tb - ta;
                     });
                     setIncomingChallengeRequests(loaded);
                 });
 
-                return () => { unsubChallenger(); unsubHost(); };
+                return () => {
+                    unsubChallenger();
+                    unsubHost();
+                };
             }, [user]);
 
             /* BOOKING CONFIRM */
             const handleBookingConfirm = async (data) => {
-                if(!data.date || !data.time) {
+                if (!data.date || !data.time) {
                     alert("Select Date/Time");
                     return;
                 }
                 const isConflict = bookings.some(
-                    b => b.venueId === data.venue.id && b.date === data.date && b.time === data.time && b.id !== data.id
+                    (b) =>
+                        b.venueId === data.venue.id &&
+                        b.date === data.date &&
+                        b.time === data.time &&
+                        b.id !== data.id
                 );
                 if (isConflict) {
                     alert("Slot already booked!");
                     return;
                 }
 
-                const payload = { 
+                const payload = {
                     venueName: data.venue.name,
                     venueId: data.venue.id,
                     user: user.name,
                     email: user.email,
-                    phone: user.phone || '',
+                    phone: user.phone || "",
                     date: data.date,
                     time: data.time,
                     purpose: data.purpose || "N/A",
@@ -987,9 +1497,6 @@
                     bookingOwnerUid: user.uid,
                     timestamp: new Date()
                 };
-                if (!data.id) {
-                    // no challengers array now; all commitments in separate collection
-                }
 
                 try {
                     if (data.id) {
@@ -1005,45 +1512,67 @@
                         );
                         alert("Booking Successful!");
                     }
-                    setView('bookings');
-                } catch(e) { alert("Action Failed: " + e.message); }
-                setSelectedVenue(null); setEditingBooking(null);
+                    setView("bookings");
+                } catch (e) {
+                    alert("Action Failed: " + e.message);
+                }
+                setSelectedVenue(null);
+                setEditingBooking(null);
             };
 
             /* CANCEL BOOKING */
             const handleCancel = async (id) => {
-                if(window.confirm("Cancel this booking?")) {
-                    try { 
-                        await window.dbFunctions.deleteDoc(window.dbFunctions.doc(window.db, "bookings", id)); 
-                    } catch(e) { alert("Failed to cancel."); }
+                if (window.confirm("Cancel this booking?")) {
+                    try {
+                        await window.dbFunctions.deleteDoc(
+                            window.dbFunctions.doc(window.db, "bookings", id)
+                        );
+                    } catch (e) {
+                        alert("Failed to cancel.");
+                    }
                 }
             };
 
             const handleEdit = (booking) => {
-                const venueObj = VENUES.find(v => v.id === booking.venueId) || { name: booking.venueName, category: 'Unknown' };
-                setEditingBooking(booking); setSelectedVenue(venueObj);
+                const venueObj =
+                    VENUES.find((v) => v.id === booking.venueId) || {
+                        name: booking.venueName,
+                        category: "Unknown"
+                    };
+                setEditingBooking(booking);
+                setSelectedVenue(venueObj);
             };
 
-            const toggleCategory = (cat) => setExpandedCat(expandedCat === cat ? null : cat);
+            const toggleCategory = (cat) =>
+                setExpandedCat(expandedCat === cat ? null : cat);
             const getVenuesByCategory = (cat) => {
-                const map = { 'Sports': 'Sports', 'Admin': ['Classroom', 'Studio'], 'Auditorium': 'Auditorium' };
-                if (cat === 'Admin') return VENUES.filter(v => map['Admin'].includes(v.category));
-                return VENUES.filter(v => v.category === cat);
+                const map = {
+                    Sports: "Sports",
+                    Admin: ["Classroom", "Studio"],
+                    Auditorium: "Auditorium"
+                };
+                if (cat === "Admin")
+                    return VENUES.filter((v) => map["Admin"].includes(v.category));
+                return VENUES.filter((v) => v.category === cat);
             };
-            
+
             const handleSort = (column) => {
-                if (sortColumn === column) setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                else { setSortColumn(column); setSortOrder('asc'); }
+                if (sortColumn === column)
+                    setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                else {
+                    setSortColumn(column);
+                    setSortOrder("asc");
+                }
             };
 
             const handleFilterChange = (column, value) => {
-                setColFilters(prev => ({ ...prev, [column]: value }));
+                setColFilters((prev) => ({ ...prev, [column]: value }));
             };
 
             /* VENUE CLICK: if active challenge => challenge modal; else booking modal */
             const handleVenueClick = (venue) => {
                 const activeChallenges = bookings.filter(
-                    b => b.venueId === venue.id && isChallengeActive(b, time)
+                    (b) => b.venueId === venue.id && isChallengeActive(b, time)
                 );
                 if (activeChallenges.length > 0) {
                     setChallengeInfo({ venue, challenges: activeChallenges });
@@ -1061,7 +1590,9 @@
                     return;
                 }
 
-                const alreadyCommitted = myChallengeRequests.some(req => req.bookingId === booking.id);
+                const alreadyCommitted = myChallengeRequests.some(
+                    (req) => req.bookingId === booking.id
+                );
                 if (alreadyCommitted) {
                     alert("You have already committed to this challenge.");
                     return;
@@ -1082,14 +1613,14 @@
                     challengerUid: user.uid,
                     challengerEmail: user.email,
                     challengerName: user.name,
-                    challengerPhone: user.phone || '',
+                    challengerPhone: user.phone || "",
 
                     bookingOwnerUid: booking.bookingOwnerUid || null,
                     hostEmail: booking.email,
                     hostName: booking.user,
-                    hostPhone: booking.phone || '',
+                    hostPhone: booking.phone || "",
 
-                    status: 'pending',
+                    status: "pending",
                     createdAt: new Date()
                 };
 
@@ -1108,7 +1639,11 @@
             const handleUpdateCommitStatus = async (commit, newStatus) => {
                 try {
                     await window.dbFunctions.updateDoc(
-                        window.dbFunctions.doc(window.db, "challengeCommitments", commit.id),
+                        window.dbFunctions.doc(
+                            window.db,
+                            "challengeCommitments",
+                            commit.id
+                        ),
                         { status: newStatus }
                     );
                     alert("Updated challenge request.");
@@ -1122,9 +1657,17 @@
                 const current = window.auth.currentUser;
                 if (!current) return;
                 try {
-                    const userDocRef = window.dbFunctions.doc(window.db, "userProfiles", current.uid);
-                    await window.dbFunctions.setDoc(userDocRef, { phone: newPhone }, { merge: true });
-                    setUser(prev => ({ ...prev, phone: newPhone }));
+                    const userDocRef = window.dbFunctions.doc(
+                        window.db,
+                        "userProfiles",
+                        current.uid
+                    );
+                    await window.dbFunctions.setDoc(
+                        userDocRef,
+                        { phone: newPhone },
+                        { merge: true }
+                    );
+                    setUser((prev) => ({ ...prev, phone: newPhone }));
                     alert("Phone updated.");
                     setShowProfile(false);
                 } catch (e) {
@@ -1134,9 +1677,9 @@
 
             /* DATABASE TABLE FILTERING/SORTING */
             const filteredBookings = bookings
-                .filter(b => {
-                    let bookedAtStr = '';
-                    if (b.timestamp && typeof b.timestamp.toDate === 'function') {
+                .filter((b) => {
+                    let bookedAtStr = "";
+                    if (b.timestamp && typeof b.timestamp.toDate === "function") {
                         bookedAtStr = b.timestamp.toDate().toLocaleTimeString();
                     }
                     return (
@@ -1145,37 +1688,104 @@
                         b.time.toLowerCase().includes(colFilters.time.toLowerCase()) &&
                         b.user.toLowerCase().includes(colFilters.user.toLowerCase()) &&
                         b.email.toLowerCase().includes(colFilters.email.toLowerCase()) &&
-                        (b.purpose || '').toLowerCase().includes(colFilters.purpose.toLowerCase()) &&
-                        (colFilters.challenge === '' ||
-                            (colFilters.challenge === 'yes' ? b.openChallenge : colFilters.challenge === 'no' ? !b.openChallenge : false)) &&
-                        bookedAtStr.toLowerCase().includes(colFilters.bookedAt.toLowerCase())
+                        (b.purpose || "")
+                            .toLowerCase()
+                            .includes(colFilters.purpose.toLowerCase()) &&
+                        (colFilters.challenge === "" ||
+                            (colFilters.challenge === "yes"
+                                ? b.openChallenge
+                                : colFilters.challenge === "no"
+                                ? !b.openChallenge
+                                : false)) &&
+                        bookedAtStr
+                            .toLowerCase()
+                            .includes(colFilters.bookedAt.toLowerCase()) &&
+                        (b.phone || "")
+                            .toLowerCase()
+                            .includes(colFilters.phone.toLowerCase())
                     );
                 })
                 .sort((a, b) => {
-                    const isAsc = sortOrder === 'asc';
+                    const isAsc = sortOrder === "asc";
                     let compareA, compareB;
                     switch (sortColumn) {
-                        case 'venue': compareA = a.venueName; compareB = b.venueName; break;
-                        case 'user': compareA = a.user; compareB = b.user; break;
-                        case 'email': compareA = a.email; compareB = b.email; break;
-                        case 'purpose': compareA = a.purpose; compareB = b.purpose; break;
-                        case 'challenge': compareA = a.openChallenge; compareB = b.openChallenge; break;
-                        case 'time': compareA = a.time; compareB = b.time; break;
-                        case 'bookedAt': 
-                            compareA = (a.timestamp && typeof a.timestamp.toDate === 'function') ? a.timestamp.toDate().getTime() : 0;
-                            compareB = (b.timestamp && typeof b.timestamp.toDate === 'function') ? b.timestamp.toDate().getTime() : 0;
+                        case "venue":
+                            compareA = a.venueName;
+                            compareB = b.venueName;
                             break;
-                        case 'date':
-                        default: 
-                            const dateA = new Date(a.date); const dateB = new Date(b.date);
+                        case "user":
+                            compareA = a.user;
+                            compareB = b.user;
+                            break;
+                        case "email":
+                            compareA = a.email;
+                            compareB = b.email;
+                            break;
+                        case "purpose":
+                            compareA = a.purpose;
+                            compareB = b.purpose;
+                            break;
+                        case "challenge":
+                            compareA = a.openChallenge;
+                            compareB = b.openChallenge;
+                            break;
+                        case "time":
+                            compareA = a.time;
+                            compareB = b.time;
+                            break;
+                        case "phone":
+                            compareA = a.phone || "";
+                            compareB = b.phone || "";
+                            break;
+                        case "bookedAt":
+                            compareA =
+                                a.timestamp && typeof a.timestamp.toDate === "function"
+                                    ? a.timestamp.toDate().getTime()
+                                    : 0;
+                            compareB =
+                                b.timestamp && typeof b.timestamp.toDate === "function"
+                                    ? b.timestamp.toDate().getTime()
+                                    : 0;
+                            break;
+                        case "date":
+                        default:
+                            const dateA = new Date(a.date);
+                            const dateB = new Date(b.date);
                             return isAsc ? dateA - dateB : dateB - dateA;
                     }
-                    if (typeof compareA === 'string') return isAsc ? compareA.localeCompare(compareB) : compareB.localeCompare(compareA);
+                    if (typeof compareA === "string")
+                        return isAsc
+                            ? compareA.localeCompare(compareB)
+                            : compareB.localeCompare(compareA);
                     if (isAsc) return compareA > compareB ? 1 : -1;
                     return compareB > compareA ? 1 : -1;
                 });
 
             if (!user) return <AuthScreen />;
+
+            /* weather icon logic */
+            const hour = time.getHours();
+            const isNight = hour < 6 || hour >= 18;
+            const wCode = weather.code || 0;
+            const rainCodes = [51, 53, 55, 56, 57, 61, 63, 65, 80, 81, 82];
+            const cloudyCodes = [1, 2, 3, 45, 48];
+            let WeatherIcon = Sun;
+            if (rainCodes.includes(wCode)) {
+                WeatherIcon = CloudRain;
+            } else if (isNight) {
+                WeatherIcon = Moon;
+            } else if (cloudyCodes.includes(wCode)) {
+                WeatherIcon = CloudIcon;
+            }
+
+            const todayStr = time.toISOString().split("T")[0];
+            const todaysBookings = bookings.filter((b) => b.date === todayStr);
+            const myBookings = bookings.filter((b) => b.email === user.email);
+            const dayDateString = time.toLocaleDateString("en-IN", {
+                weekday: "short",
+                day: "2-digit",
+                month: "short"
+            });
 
             return (
                 <div className="min-h-screen flex flex-col relative custom-cursor overflow-x-hidden">
@@ -1185,9 +1795,12 @@
                                 P
                             </div>
                             <div>
-                                <h1 className="font-bold tracking-wider text-lg retro-font text-white">PLANET-I</h1>
+                                <h1 className="font-bold tracking-wider text-lg retro-font text-white">
+                                    PLANET-I
+                                </h1>
                                 <p className="text-xs text-gray-400 flex items-center gap-2 retro-font">
-                                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> System Operational
+                                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                    System Operational
                                 </p>
                             </div>
                         </div>
@@ -1196,7 +1809,9 @@
                                 onClick={() => setShowProfile(true)}
                                 className="text-right hidden sm:block retro-font hover:opacity-80"
                             >
-                                <p className="text-sm font-semibold text-green-400">{user.name}</p>
+                                <p className="text-sm font-semibold text-green-400">
+                                    {user.name}
+                                </p>
                                 <p className="text-xs text-gray-400">{user.role}</p>
                             </button>
                             <button
@@ -1207,73 +1822,81 @@
                             </button>
                         </div>
                     </header>
-                    
-                    <div className="flex-1 flex flex-col md:flex-row relative z-10 min-h-[calc(100vh-80px)]"> 
+
+                    <div className="flex-1 flex flex-col md:flex-row relative z-10 min-h-[calc(100vh-80px)]">
+                        {/* SIDEBAR */}
                         <aside className="w-full md:w-72 p-6 flex flex-col gap-6 border-r border-white/10 bg-[#0f172a]/80 backdrop-blur-md sticky top-[80px] h-[calc(100vh-80px)] overflow-y-auto">
                             <div className="bg-black/40 p-4 rounded-xl border border-white/10 retro-font">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-xs text-gray-400">Rau-Pithampur</span>
-                                    {weather.desc.indexOf('Rain') !== -1 ? (
-                                        <CloudRain className="w-5 h-5 text-blue-400" />
-                                    ) : (
-                                        <Sun className="w-5 h-5 text-yellow-400" />
-                                    )}
+                                    <WeatherIcon className="w-5 h-5 text-yellow-300" />
                                 </div>
-                                <div className="text-2xl font-bold text-white">{weather.temp}°C</div>
-                                <div className="text-xs text-gray-400 mb-2">{weather.desc}</div>
+                                <div className="text-2xl font-bold text-white">
+                                    {weather.temp}°C
+                                </div>
+                                <div className="text-xs text-gray-400 mb-1">
+                                    {weather.desc}
+                                </div>
+                                <div className="text-[11px] text-gray-300 mb-2">
+                                    {dayDateString}
+                                </div>
                                 <div className="flex justify-between text-xs">
                                     <span className="text-green-400">AQI: {weather.aqi}</span>
                                     <span className="text-blue-300">
-                                        {time.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                                        {time.toLocaleTimeString([], {
+                                            hour: "2-digit",
+                                            minute: "2-digit"
+                                        })}
                                     </span>
                                 </div>
                             </div>
+
                             <nav className="space-y-4 text-lg retro-font tracking-widest">
                                 <button
-                                    onClick={() => setView('map')}
+                                    onClick={() => setView("map")}
                                     className={`block w-full text-left p-2 rounded hover:bg-white/10 transition-colors ${
-                                        view === 'map' ? 'text-yellow-400' : 'text-white'
+                                        view === "map" ? "text-yellow-400" : "text-white"
                                     }`}
                                 >
                                     MAP
                                 </button>
                                 <button
-                                    onClick={() => setView('bookings')}
+                                    onClick={() => setView("bookings")}
                                     className={`block w-full text-left p-2 rounded hover:bg-white/10 transition-colors ${
-                                        view === 'bookings' ? 'text-yellow-400' : 'text-white'
+                                        view === "bookings" ? "text-yellow-400" : "text-white"
                                     }`}
                                 >
                                     MY BOOKINGS
                                 </button>
                                 {user.email === ADMIN_EMAIL && (
                                     <button
-                                        onClick={() => setView('database')}
+                                        onClick={() => setView("database")}
                                         className={`block w-full text-left p-2 rounded hover:bg-white/10 transition-colors ${
-                                            view === 'database' ? 'text-yellow-400' : 'text-white'
+                                            view === "database" ? "text-yellow-400" : "text-white"
                                         }`}
                                     >
                                         DATABASE
                                     </button>
                                 )}
                                 <div className="h-px bg-white/20 my-4"></div>
-                                {['Sports', 'Admin', 'Auditorium'].map(cat => (
+                                {["Sports", "Admin", "Auditorium"].map((cat) => (
                                     <div key={cat}>
                                         <button
                                             onClick={() => toggleCategory(cat)}
                                             className={`w-full text-left p-2 rounded hover:bg-white/10 transition-colors text-sm text-green-400 flex justify-between items-center ${
-                                                expandedCat === cat ? 'bg-white/10' : ''
+                                                expandedCat === cat ? "bg-white/10" : ""
                                             }`}
                                         >
-                                            {cat === 'Admin' ? 'ADMIN BLOCK' : cat.toUpperCase()}
+                                            {cat === "Admin" ? "ADMIN BLOCK" : cat.toUpperCase()}
                                             <ChevronDown
                                                 className={`w-4 h-4 transition-transform ${
-                                                    expandedCat === cat ? 'rotate-180' : ''
+                                                    expandedCat === cat ? "rotate-180" : ""
                                                 }`}
                                             />
                                         </button>
                                         {expandedCat === cat && (
                                             <div className="ml-4 mt-2 space-y-1 border-l-2 border-white/20 pl-2">
-                                                {getVenuesByCategory(cat).map(v => (
+                                                {getVenuesByCategory(cat).map((v) => (
                                                     <button
                                                         key={v.id}
                                                         onClick={() => handleVenueClick(v)}
@@ -1287,18 +1910,19 @@
                                     </div>
                                 ))}
                                 <button
-                                    onClick={() => setView('heatmap')}
+                                    onClick={() => setView("heatmap")}
                                     className={`block w-full text-left p-2 rounded hover:bg-white/10 transition-colors text-sm mt-4 flex items-center gap-2 ${
-                                        view === 'heatmap' ? 'text-red-400' : 'text-red-300'
+                                        view === "heatmap" ? "text-red-400" : "text-red-300"
                                     }`}
                                 >
                                     <BarChart3 /> HEATMAP
                                 </button>
                             </nav>
                         </aside>
-                        
+
+                        {/* MAIN CONTENT */}
                         <main className="flex-1 p-6 h-full overflow-y-auto relative">
-                            {view === 'map' && (
+                            {view === "map" && (
                                 <div className="relative">
                                     <PixelEarth
                                         venues={VENUES}
@@ -1309,66 +1933,70 @@
                                     <UpcomingChallengesPanel
                                         bookings={bookings}
                                         now={time}
-                                        onSelect={(venue, challenges) => setChallengeInfo({ venue, challenges })}
+                                        onSelect={(venue, challenges) =>
+                                            setChallengeInfo({ venue, challenges })
+                                        }
                                     />
                                 </div>
                             )}
-                            
-                            {view === 'bookings' && (
+
+                            {view === "bookings" && (
                                 <div className="w-full h-full bg-[#1e293b]/90 border-4 border-white p-8 overflow-y-auto backdrop-blur-sm relative flex flex-col rounded-xl shadow-2xl">
                                     <div className="flex justify-between items-center mb-8 border-b-4 border-white pb-4">
-                                        <h2 className="text-3xl text-yellow-400 retro-font">MY BOOKINGS</h2>
+                                        <h2 className="text-3xl text-yellow-400 retro-font">
+                                            MY BOOKINGS
+                                        </h2>
                                         <button
-                                            onClick={() => setView('map')}
+                                            onClick={() => setView("map")}
                                             className="text-gray-400 hover:text-white p-2 border-2 border-transparent hover:border-white transition-all"
                                         >
                                             <ArrowLeft className="w-8 h-8" />
                                         </button>
                                     </div>
-                                    {bookings.filter(b => b.email === user.email).length === 0 ? (
+                                    {myBookings.length === 0 ? (
                                         <div className="flex-1 flex items-center justify-center">
-                                            <p className="text-gray-400 retro-font text-xl animate-pulse">NO ACTIVE QUESTS.</p>
+                                            <p className="text-gray-400 retro-font text-xl animate-pulse">
+                                                NO ACTIVE QUESTS.
+                                            </p>
                                         </div>
                                     ) : (
                                         <div className="grid gap-4 w-full mb-10">
-                                            {bookings
-                                                .filter(b => b.email === user.email)
-                                                .map(b => (
-                                                    <div
-                                                        key={b.id}
-                                                        className="bg-black/40 border-2 border-white p-6 flex flex-col gap-4 hover:bg-white/5 transition-colors"
-                                                    >
-                                                        <div className="flex justify-between items-center">
-                                                            <div>
-                                                                <div className="text-xl text-green-400 font-bold uppercase mb-2 retro-font">
-                                                                    {b.venueName}
-                                                                </div>
-                                                                <div className="text-md text-white font-mono">
-                                                                    {b.date} @ {b.time}
-                                                                </div>
-                                                                {b.openChallenge && (
-                                                                    <div className="text-sm text-yellow-400 mt-2 animate-pulse">
-                                                                        {'>'}{'>'} OPEN CHALLENGE FLAGGED
-                                                                    </div>
-                                                                )}
+                                            {myBookings.map((b) => (
+                                                <div
+                                                    key={b.id}
+                                                    className="bg-black/40 border-2 border-white p-6 flex flex-col gap-4 hover:bg-white/5 transition-colors"
+                                                >
+                                                    <div className="flex justify-between items-center">
+                                                        <div>
+                                                            <div className="text-xl text-green-400 font-bold uppercase mb-2 retro-font">
+                                                                {b.venueName}
                                                             </div>
-                                                            <div className="flex gap-2">
-                                                                <button
-                                                                    onClick={() => handleEdit(b)}
-                                                                    className="bg-blue-500/20 p-2 rounded hover:bg-blue-500 text-blue-400 hover:text-white transition-colors"
-                                                                >
-                                                                    <EditIcon className="w-4 h-4" />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleCancel(b.id)}
-                                                                    className="bg-red-500/20 p-2 rounded hover:bg-red-500 text-red-400 hover:text-white transition-colors"
-                                                                >
-                                                                    <XIcon className="w-4 h-4" />
-                                                                </button>
+                                                            <div className="text-md text-white font-mono">
+                                                                {b.date} @ {b.time}
                                                             </div>
+                                                            {b.openChallenge && (
+                                                                <div className="text-sm text-yellow-400 mt-2 animate-pulse">
+                                                                    {" >> "}OPEN CHALLENGE FLAGGED
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={() => handleEdit(b)}
+                                                                className="bg-blue-500/20 p-2 rounded hover:bg-blue-500 text-blue-400 hover:text-white transition-colors"
+                                                            >
+                                                                <EditIcon className="w-4 h-4" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleCancel(b.id)}
+                                                                className="bg-red-500/20 p-2 rounded hover:bg-red-500 text-red-400 hover:text-white transition-colors"
+                                                            >
+                                                                <XIcon className="w-4 h-4" />
+                                                            </button>
                                                         </div>
                                                     </div>
-                                                ))}
+                                                </div>
+                                            ))}
                                         </div>
                                     )}
 
@@ -1383,7 +2011,7 @@
                                             </p>
                                         ) : (
                                             <div className="grid gap-4">
-                                                {myChallengeRequests.map(req => (
+                                                {myChallengeRequests.map((req) => (
                                                     <div
                                                         key={req.id}
                                                         className="bg-black/40 border-2 border-blue-400 p-4 flex flex-col gap-2"
@@ -1392,29 +2020,34 @@
                                                             {req.venueName} — {req.date} — {req.time}
                                                         </div>
                                                         <div className="text-xs text-gray-200">
-                                                            Host:{' '}
+                                                            Host:{" "}
                                                             <span className="text-blue-300">
                                                                 {req.hostName} ({req.hostEmail})
                                                             </span>
                                                         </div>
                                                         <div className="text-xs text-gray-200">
-                                                            Host Phone:{' '}
+                                                            Host Phone:{" "}
                                                             <span className="text-yellow-300">
-                                                                {req.hostPhone && req.hostPhone.length > 0 ? req.hostPhone : 'Not provided'}
+                                                                {req.hostPhone &&
+                                                                req.hostPhone.length > 0
+                                                                    ? req.hostPhone
+                                                                    : "Not provided"}
                                                             </span>
                                                         </div>
                                                         <div className="text-xs text-gray-200 mt-1">
-                                                            Status:{' '}
+                                                            Status:{" "}
                                                             <span
                                                                 className={
-                                                                    req.status === 'accepted'
-                                                                        ? 'text-green-400'
-                                                                        : req.status === 'rejected'
-                                                                        ? 'text-red-400'
-                                                                        : 'text-yellow-300'
+                                                                    req.status === "accepted"
+                                                                        ? "text-green-400"
+                                                                        : req.status === "rejected"
+                                                                        ? "text-red-400"
+                                                                        : "text-yellow-300"
                                                                 }
                                                             >
-                                                                {req.status ? req.status.toUpperCase() : 'PENDING'}
+                                                                {req.status
+                                                                    ? req.status.toUpperCase()
+                                                                    : "PENDING"}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -1434,7 +2067,7 @@
                                             </p>
                                         ) : (
                                             <div className="grid gap-4">
-                                                {incomingChallengeRequests.map(req => (
+                                                {incomingChallengeRequests.map((req) => (
                                                     <div
                                                         key={req.id}
                                                         className="bg-black/40 border-2 border-yellow-400 p-4 flex flex-col gap-2"
@@ -1443,39 +2076,51 @@
                                                             {req.venueName} — {req.date} — {req.time}
                                                         </div>
                                                         <div className="text-xs text-gray-200">
-                                                            Challenger:{' '}
+                                                            Challenger:{" "}
                                                             <span className="text-blue-300">
-                                                                {req.challengerName} ({req.challengerEmail})
+                                                                {req.challengerName} (
+                                                                {req.challengerEmail})
                                                             </span>
                                                         </div>
                                                         <div className="text-xs text-gray-200">
-                                                            Phone Number:{' '}
+                                                            Phone Number:{" "}
                                                             <span className="text-yellow-300">
-                                                                {req.challengerPhone && req.challengerPhone.length > 0 ? req.challengerPhone : 'Not provided'}
+                                                                {req.challengerPhone &&
+                                                                req.challengerPhone.length > 0
+                                                                    ? req.challengerPhone
+                                                                    : "Not provided"}
                                                             </span>
                                                         </div>
                                                         <div className="flex items-center justify-between mt-2">
                                                             <div className="text-xs text-gray-200">
-                                                                Status:{' '}
+                                                                Status:{" "}
                                                                 <span
                                                                     className={
-                                                                        req.status === 'accepted'
-                                                                            ? 'text-green-400'
-                                                                            : req.status === 'rejected'
-                                                                            ? 'text-red-400'
-                                                                            : 'text-yellow-300'
+                                                                        req.status === "accepted"
+                                                                            ? "text-green-400"
+                                                                            : req.status ===
+                                                                              "rejected"
+                                                                            ? "text-red-400"
+                                                                            : "text-yellow-300"
                                                                     }
                                                                 >
-                                                                    {req.status ? req.status.toUpperCase() : 'PENDING'}
+                                                                    {req.status
+                                                                        ? req.status.toUpperCase()
+                                                                        : "PENDING"}
                                                                 </span>
                                                             </div>
-                                                            {req.status === 'pending' && (
+                                                            {req.status === "pending" && (
                                                                 <div className="flex gap-2">
                                                                     <RetroButton
                                                                         type="button"
                                                                         variant="success"
                                                                         className="px-2 py-1 text-[10px]"
-                                                                        onClick={() => handleUpdateCommitStatus(req, 'accepted')}
+                                                                        onClick={() =>
+                                                                            handleUpdateCommitStatus(
+                                                                                req,
+                                                                                "accepted"
+                                                                            )
+                                                                        }
                                                                     >
                                                                         ACCEPT
                                                                     </RetroButton>
@@ -1483,7 +2128,12 @@
                                                                         type="button"
                                                                         variant="danger"
                                                                         className="px-2 py-1 text-[10px]"
-                                                                        onClick={() => handleUpdateCommitStatus(req, 'rejected')}
+                                                                        onClick={() =>
+                                                                            handleUpdateCommitStatus(
+                                                                                req,
+                                                                                "rejected"
+                                                                            )
+                                                                        }
                                                                     >
                                                                         REJECT
                                                                     </RetroButton>
@@ -1497,19 +2147,21 @@
                                     </div>
                                 </div>
                             )}
-                            
-                            {view === 'database' && (
+
+                            {view === "database" && (
                                 <div className="w-full h-full bg-[#1e293b]/95 border-4 border-white p-8 overflow-y-auto backdrop-blur-sm relative flex flex-col rounded-xl shadow-2xl">
                                     <div className="flex justify-between items-center mb-8 border-b-4 border-white pb-4">
-                                        <h2 className="text-3xl text-yellow-400 retro-font">BOOKINGS DATABASE</h2>
+                                        <h2 className="text-3xl text-yellow-400 retro-font">
+                                            BOOKINGS DATABASE
+                                        </h2>
                                         <button
-                                            onClick={() => setView('map')}
+                                            onClick={() => setView("map")}
                                             className="text-gray-400 hover:text-white p-2 border-2 border-transparent hover:border-white transition-all"
                                         >
                                             <ArrowLeft className="w-8 h-8" />
                                         </button>
                                     </div>
-                                    
+
                                     <div className="retro-table-container flex-1">
                                         <table className="retro-table">
                                             <thead>
@@ -1517,17 +2169,35 @@
                                                     <th className="id-col">#</th>
                                                     <th>
                                                         <div className="header-content">
-                                                            <div className="header-title" onClick={() => handleSort('venue')}>
-                                                                VENUE {sortColumn === 'venue' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                            <div
+                                                                className="header-title"
+                                                                onClick={() => handleSort("venue")}
+                                                            >
+                                                                VENUE{" "}
+                                                                {sortColumn === "venue" && (
+                                                                    <span className="sort-arrow">
+                                                                        {sortOrder === "asc"
+                                                                            ? "↑"
+                                                                            : "↓"}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             <select
                                                                 className="col-filter-select"
-                                                                onClick={e => e.stopPropagation()}
-                                                                onChange={e => handleFilterChange('venue', e.target.value)}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                onChange={(e) =>
+                                                                    handleFilterChange(
+                                                                        "venue",
+                                                                        e.target.value
+                                                                    )
+                                                                }
                                                             >
                                                                 <option value="">All Venues</option>
-                                                                {VENUES.map(v => (
-                                                                    <option key={v.id} value={v.name}>
+                                                                {VENUES.map((v) => (
+                                                                    <option
+                                                                        key={v.id}
+                                                                        value={v.name}
+                                                                    >
                                                                         {v.name}
                                                                     </option>
                                                                 ))}
@@ -1536,254 +2206,447 @@
                                                     </th>
                                                     <th>
                                                         <div className="header-content">
-                                                            <div className="header-title" onClick={() => handleSort('date')}>
-                                                                DATE {sortColumn === 'date' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                            <div
+                                                                className="header-title"
+                                                                onClick={() => handleSort("date")}
+                                                            >
+                                                                DATE{" "}
+                                                                {sortColumn === "date" && (
+                                                                    <span className="sort-arrow">
+                                                                        {sortOrder === "asc"
+                                                                            ? "↑"
+                                                                            : "↓"}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             <input
                                                                 type="text"
                                                                 placeholder="YYYY-MM-DD"
                                                                 className="col-filter-input"
-                                                                onClick={e => e.stopPropagation()}
-                                                                onChange={e => handleFilterChange('date', e.target.value)}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                onChange={(e) =>
+                                                                    handleFilterChange(
+                                                                        "date",
+                                                                        e.target.value
+                                                                    )
+                                                                }
                                                             />
                                                         </div>
                                                     </th>
                                                     <th>
                                                         <div className="header-content">
-                                                            <div className="header-title" onClick={() => handleSort('time')}>
-                                                                TIME {sortColumn === 'time' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                            <div
+                                                                className="header-title"
+                                                                onClick={() => handleSort("time")}
+                                                            >
+                                                                TIME{" "}
+                                                                {sortColumn === "time" && (
+                                                                    <span className="sort-arrow">
+                                                                        {sortOrder === "asc"
+                                                                            ? "↑"
+                                                                            : "↓"}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             <input
                                                                 type="text"
                                                                 placeholder="Filter..."
                                                                 className="col-filter-input"
-                                                                onClick={e => e.stopPropagation()}
-                                                                onChange={e => handleFilterChange('time', e.target.value)}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                onChange={(e) =>
+                                                                    handleFilterChange(
+                                                                        "time",
+                                                                        e.target.value
+                                                                    )
+                                                                }
                                                             />
                                                         </div>
                                                     </th>
                                                     <th>
                                                         <div className="header-content">
-                                                            <div className="header-title" onClick={() => handleSort('user')}>
-                                                                USER {sortColumn === 'user' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                            <div
+                                                                className="header-title"
+                                                                onClick={() => handleSort("user")}
+                                                            >
+                                                                USER{" "}
+                                                                {sortColumn === "user" && (
+                                                                    <span className="sort-arrow">
+                                                                        {sortOrder === "asc"
+                                                                            ? "↑"
+                                                                            : "↓"}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             <input
                                                                 type="text"
                                                                 placeholder="Filter..."
                                                                 className="col-filter-input"
-                                                                onClick={e => e.stopPropagation()}
-                                                                onChange={e => handleFilterChange('user', e.target.value)}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                onChange={(e) =>
+                                                                    handleFilterChange(
+                                                                        "user",
+                                                                        e.target.value
+                                                                    )
+                                                                }
                                                             />
                                                         </div>
                                                     </th>
                                                     <th>
                                                         <div className="header-content">
-                                                            <div className="header-title" onClick={() => handleSort('email')}>
-                                                                EMAIL {sortColumn === 'email' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                            <div
+                                                                className="header-title"
+                                                                onClick={() => handleSort("email")}
+                                                            >
+                                                                EMAIL{" "}
+                                                                {sortColumn === "email" && (
+                                                                    <span className="sort-arrow">
+                                                                        {sortOrder === "asc"
+                                                                            ? "↑"
+                                                                            : "↓"}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             <input
                                                                 type="text"
                                                                 placeholder="Filter..."
                                                                 className="col-filter-input"
-                                                                onClick={e => e.stopPropagation()}
-                                                                onChange={e => handleFilterChange('email', e.target.value)}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                onChange={(e) =>
+                                                                    handleFilterChange(
+                                                                        "email",
+                                                                        e.target.value
+                                                                    )
+                                                                }
                                                             />
                                                         </div>
                                                     </th>
                                                     <th>
                                                         <div className="header-content">
-                                                            <div className="header-title" onClick={() => handleSort('purpose')}>
-                                                                PURPOSE {sortColumn === 'purpose' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                            <div
+                                                                className="header-title"
+                                                                onClick={() => handleSort("phone")}
+                                                            >
+                                                                PHONE{" "}
+                                                                {sortColumn === "phone" && (
+                                                                    <span className="sort-arrow">
+                                                                        {sortOrder === "asc"
+                                                                            ? "↑"
+                                                                            : "↓"}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             <input
                                                                 type="text"
                                                                 placeholder="Filter..."
                                                                 className="col-filter-input"
-                                                                onClick={e => e.stopPropagation()}
-                                                                onChange={e => handleFilterChange('purpose', e.target.value)}
+                                                              	 onClick={(e) => e.stopPropagation()}
+                                                                onChange={(e) =>
+                                                                    handleFilterChange(
+                                                                        "phone",
+                                                                        e.target.value
+                                                                    )
+                                                                }
                                                             />
                                                         </div>
                                                     </th>
                                                     <th>
                                                         <div className="header-content">
-                                                            <div className="header-title" onClick={() => handleSort('challenge')}>
-                                                                CHALLENGE {sortColumn === 'challenge' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                            <div
+                                                                className="header-title"
+                                                                onClick={() =>
+                                                                    handleSort("purpose")
+                                                                }
+                                                            >
+                                                                PURPOSE{" "}
+                                                                {sortColumn === "purpose" && (
+                                                                    <span className="sort-arrow">
+                                                                        {sortOrder === "asc"
+                                                                            ? "↑"
+                                                                            : "↓"}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Filter..."
+                                                                className="col-filter-input"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                onChange={(e) =>
+                                                                    handleFilterChange(
+                                                                        "purpose",
+                                                                        e.target.value
+                                                                    )
+                                                                }
+                                                            />
+                                                        </div>
+                                                    </th>
+                                                    <th>
+                                                        <div className="header-content">
+                                                            <div
+                                                                className="header-title"
+                                                                onClick={() =>
+                                                                    handleSort("challenge")
+                                                                }
+                                                            >
+                                                                CHALLENGE{" "}
+                                                                {sortColumn === "challenge" && (
+                                                                    <span className="sort-arrow">
+                                                                        {sortOrder === "asc"
+                                                                            ? "↑"
+                                                                            : "↓"}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             <select
                                                                 className="col-filter-select"
-                                                                onClick={e => e.stopPropagation()}
-                                                                onChange={e => handleFilterChange('challenge', e.target.value)}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                onChange={(e) =>
+                                                                    handleFilterChange(
+                                                                        "challenge",
+                                                                        e.target.value
+                                                                    )
+                                                                }
                                                             >
                                                                 <option value="">All</option>
-                                                                <option value="yes">Yes</option>
-                                                                <option value="no">No</option>
+                                                                <option value="yes">
+                                                                    Open Challenge
+                                                                </option>
+                                                                <option value="no">
+                                                                    Normal Booking
+                                                                </option>
                                                             </select>
                                                         </div>
                                                     </th>
                                                     <th>
                                                         <div className="header-content">
-                                                            <div className="header-title" onClick={() => handleSort('bookedAt')}>
-                                                                BOOKED AT {sortColumn === 'bookedAt' && <span className="sort-arrow">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                            <div
+                                                                className="header-title"
+                                                                onClick={() =>
+                                                                    handleSort("bookedAt")
+                                                                }
+                                                            >
+                                                                BOOKED AT{" "}
+                                                                {sortColumn === "bookedAt" && (
+                                                                    <span className="sort-arrow">
+                                                                        {sortOrder === "asc"
+                                                                            ? "↑"
+                                                                            : "↓"}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             <input
                                                                 type="text"
                                                                 placeholder="Filter..."
                                                                 className="col-filter-input"
-                                                                onClick={e => e.stopPropagation()}
-                                                                onChange={e => handleFilterChange('bookedAt', e.target.value)}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                onChange={(e) =>
+                                                                    handleFilterChange(
+                                                                        "bookedAt",
+                                                                        e.target.value
+                                                                    )
+                                                                }
                                                             />
+                                                        </div>
+                                                    </th>
+                                                    <th>
+                                                        <div className="header-content">
+                                                            <div className="header-title">
+                                                                ACTIONS
+                                                            </div>
                                                         </div>
                                                     </th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {filteredBookings.map((b, i) => (
-                                                    <tr key={b.id}>
-                                                        <td className="row-id">{i + 1}</td>
-                                                        <td>{b.venueName}</td>
-                                                        <td>{b.date}</td>
-                                                        <td>{b.time}</td>
-                                                        <td>{b.user}</td>
-                                                        <td style={{ textTransform: 'lowercase' }}>{b.email}</td>
-                                                        <td>{b.purpose}</td>
-                                                        <td>{b.openChallenge ? 'YES' : 'NO'}</td>
-                                                        <td>
-                                                            {b.timestamp && typeof b.timestamp.toDate === 'function'
-                                                                ? b.timestamp.toDate().toLocaleTimeString()
-                                                                : 'N/A'}
-                                                        </td>
-                                                    </tr>
-                                                ))}
+                                                {filteredBookings.map((b, index) => {
+                                                    let bookedAtStr = "";
+                                                    if (
+                                                        b.timestamp &&
+                                                        typeof b.timestamp.toDate === "function"
+                                                    ) {
+                                                        const d = b.timestamp.toDate();
+                                                        bookedAtStr = `${d.toLocaleDateString()} ${d.toLocaleTimeString(
+                                                            [],
+                                                            {
+                                                                hour: "2-digit",
+                                                                minute: "2-digit"
+                                                            }
+                                                        )}`;
+                                                    }
+                                                    return (
+                                                        <tr key={b.id}>
+                                                            <td className="row-id">
+                                                                {index + 1}
+                                                            </td>
+                                                            <td>{b.venueName}</td>
+                                                            <td>{b.date}</td>
+                                                            <td>{b.time}</td>
+                                                            <td>{b.user}</td>
+                                                            <td>{b.email}</td>
+                                                            <td>{b.phone || "-"}</td>
+                                                            <td>{b.purpose || "N/A"}</td>
+                                                            <td>
+                                                                {b.openChallenge
+                                                                    ? "OPEN"
+                                                                    : "NORMAL"}
+                                                            </td>
+                                                            <td>{bookedAtStr || "-"}</td>
+                                                            <td>
+                                                                <div className="flex gap-2">
+                                                                    <button
+                                                                        onClick={() => handleEdit(b)}
+                                                                        className="bg-blue-500/20 p-1 rounded hover:bg-blue-500 text-blue-400 hover:text-white transition-colors"
+                                                                    >
+                                                                        <EditIcon className="w-4 h-4" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            handleCancel(b.id)
+                                                                        }
+                                                                        className="bg-red-500/20 p-1 rounded hover:bg-red-500 text-red-400 hover:text-white transition-colors"
+                                                                    >
+                                                                        <XIcon className="w-4 h-4" />
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
                             )}
-                            
-                            {view === 'heatmap' && (
-                                <div className="w-full h-full bg-[#1e293b]/95 border-4 border-white p-8 overflow-y-auto backdrop-blur-sm relative flex flex-col rounded-xl shadow-2xl">
-                                    <div className="flex justify-between items-center mb-8 border-b-4 border-white pb-4">
-                                        <h2 className="text-3xl text-red-400 retro-font">CAMPUS HEATMAP</h2>
+
+                            {view === "heatmap" && (
+                                <div className="w-full h-full bg-[#020617]/95 border-4 border-white p-6 overflow-x-auto backdrop-blur-sm relative flex flex-col rounded-xl shadow-2xl">
+                                    <div className="flex justify-between items-center mb-6 border-b-4 border-white pb-4">
+                                        <h2 className="text-3xl text-red-400 retro-font">
+                                            TODAY&apos;S HEATMAP
+                                        </h2>
                                         <button
-                                            onClick={() => setView('map')}
+                                            onClick={() => setView("map")}
                                             className="text-gray-400 hover:text-white p-2 border-2 border-transparent hover:border-white transition-all"
                                         >
-                                            <ArrowLeft className="w-6 h-6" />
+                                            <ArrowLeft className="w-8 h-8" />
                                         </button>
                                     </div>
-                                    <div className="bg-black border-2 border-purple-500 p-6 mb-8 text-sm font-mono text-purple-300 leading-relaxed shadow-[0_0_15px_rgba(168,85,247,0.3)]">
-                                        {aiInsight}
-                                    </div>
-                                    <div className="flex-1 w-full overflow-x-auto">
-                                        <div className="min-w-[600px]">
-                                            <div className="flex mb-4 ml-48">
-                                                {TIME_SLOTS.map(t => (
-                                                    <div
-                                                        key={t}
-                                                        className="flex-1 text-center text-xs text-gray-400 -rotate-45 origin-bottom"
-                                                    >
-                                                        {t}
+
+                                    {todaysBookings.length === 0 ? (
+                                        <div className="flex-1 flex items-center justify-center">
+                                            <p className="text-gray-400 retro-font text-xl animate-pulse text-center">
+                                                NO BOOKINGS FOR TODAY.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="text-xs text-gray-300 mb-4">
+                                                Showing bookings for{" "}
+                                                <span className="text-yellow-300 font-mono">
+                                                    {todayStr}
+                                                </span>
+                                                . Each glowing block represents a booked slot.
+                                            </p>
+                                            <div className="inline-block rounded-lg border border-white/20 bg-black/40 p-3">
+                                                <div
+                                                    className="grid text-[10px] font-mono"
+                                                    style={{
+                                                        gridTemplateColumns: `160px repeat(${TIME_SLOTS.length}, minmax(48px, 1fr))`
+                                                    }}
+                                                >
+                                                    <div className="px-2 py-2 border-b border-white/20 text-left text-gray-300">
+                                                        VENUE
                                                     </div>
-                                                ))}
-                                            </div>
-                                            <div className="space-y-3">
-                                                {VENUES.map(v => (
-                                                    <div key={v.id} className="flex items-center gap-4">
-                                                        <span className="w-48 text-xs uppercase font-mono text-right truncate pr-4 text-gray-300">
-                                                            {v.name}
-                                                        </span>
-                                                        <div className="flex-1 h-10 bg-black border border-white/20 flex relative group">
-                                                            {TIME_SLOTS.map(slot => {
-                                                                const isBooked = bookings.some(
-                                                                    b => b.venueId === v.id && b.time.indexOf(slot) === 0
+                                                    {TIME_SLOTS.map((slot) => (
+                                                        <div
+                                                            key={slot}
+                                                            className="px-1 py-2 border-b border-l border-white/20 text-center text-gray-300"
+                                                        >
+                                                            {slot}
+                                                        </div>
+                                                    ))}
+
+                                                    {VENUES.filter((v) =>
+                                                        todaysBookings.some(
+                                                            (b) => b.venueId === v.id
+                                                        )
+                                                    ).map((v) => (
+                                                        <React.Fragment key={v.id}>
+                                                            <div className="px-2 py-2 border-t border-white/20 text-[11px] text-green-300 text-left">
+                                                                {v.name}
+                                                            </div>
+                                                            {TIME_SLOTS.map((slot) => {
+                                                                const booked = todaysBookings.find(
+                                                                    (b) =>
+                                                                        b.venueId === v.id &&
+                                                                        b.time.startsWith(slot)
                                                                 );
                                                                 return (
                                                                     <div
                                                                         key={slot}
-                                                                        className={`flex-1 border-r border-white/10 transition-all hover:opacity-80 relative ${
-                                                                            isBooked
-                                                                                ? 'bg-red-500'
-                                                                                : 'bg-transparent hover:bg-white/10'
+                                                                        className={`border-t border-l border-white/10 h-8 flex items-center justify-center ${
+                                                                            booked
+                                                                                ? "bg-green-500/80 shadow-[0_0_10px_rgba(34,197,94,0.8)] text-black"
+                                                                                : "bg-black/40 text-gray-700"
                                                                         }`}
                                                                     >
-                                                                        <div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-1 text-[10px] bg-black border border-white px-1 pointer-events-none z-20 whitespace-nowrap text-white">
-                                                                            {slot}
-                                                                        </div>
+                                                                        {booked ? "●" : ""}
                                                                     </div>
                                                                 );
                                                             })}
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                                        </React.Fragment>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
+                                        </>
+                                    )}
                                 </div>
+                            )}
+
+                            {selectedVenue && (
+                                <BookingModal
+                                    venue={selectedVenue}
+                                    bookingToEdit={editingBooking}
+                                    onClose={() => {
+                                        setSelectedVenue(null);
+                                        setEditingBooking(null);
+                                    }}
+                                    onConfirm={handleBookingConfirm}
+                                />
+                            )}
+
+                            {challengeInfo && (
+                                <ChallengeModal
+                                    venue={challengeInfo.venue}
+                                    challenges={challengeInfo.challenges}
+                                    currentUser={user}
+                                    challengeRequests={myChallengeRequests}
+                                    onClose={() => setChallengeInfo(null)}
+                                    onBook={() => {
+                                        setSelectedVenue(challengeInfo.venue);
+                                        setEditingBooking(null);
+                                        setChallengeInfo(null);
+                                        setView("map");
+                                    }}
+                                    onCommit={handleCommitToChallenge}
+                                />
+                            )}
+
+                            {showProfile && user && (
+                                <ProfileModal
+                                    user={user}
+                                    onClose={() => setShowProfile(false)}
+                                    onSave={handleSaveProfilePhone}
+                                />
                             )}
                         </main>
                     </div>
-
-                    {(selectedVenue || editingBooking) && (
-                        <BookingModal
-                            venue={selectedVenue}
-                            bookingToEdit={editingBooking}
-                            onClose={() => { setSelectedVenue(null); setEditingBooking(null); }}
-                            onConfirm={handleBookingConfirm}
-                        />
-                    )}
-
-                    {challengeInfo && (
-                        <ChallengeModal
-                            venue={challengeInfo.venue}
-                            challenges={challengeInfo.challenges}
-                            currentUser={user}
-                            challengeRequests={myChallengeRequests}
-                            onClose={() => setChallengeInfo(null)}
-                            onBook={() => {
-                                setChallengeInfo(null);
-                                setSelectedVenue(challengeInfo.venue);
-                                setEditingBooking(null);
-                            }}
-                            onCommit={handleCommitToChallenge}
-                        />
-                    )}
-
-                    {showProfile && (
-                        <ProfileModal
-                            user={user}
-                            onClose={() => setShowProfile(false)}
-                            onSave={handleSaveProfilePhone}
-                        />
-                    )}
                 </div>
             );
         };
 
-        const Root = () => {
-            const [isLoaded, setIsLoaded] = useState(false);
-
-            useEffect(() => {
-                const checkFirebase = setInterval(() => {
-                    if (window.auth && window.authFunctions && window.db) {
-                        clearInterval(checkFirebase);
-                        setIsLoaded(true);
-                    }
-                }, 50);
-                return () => clearInterval(checkFirebase);
-            }, []);
-
-            if (!isLoaded)
-                return (
-                    <div className="flex items-center justify-center h-screen text-green-500 retro-font animate-pulse">
-                        INITIALIZING UPLINK...
-                    </div>
-                );
-
-            return <PixelPlanetApp />;
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<Root />);
+        ReactDOM.createRoot(document.getElementById("root")).render(<PixelPlanetApp />);
     </script>
 </body>
 </html>
+
