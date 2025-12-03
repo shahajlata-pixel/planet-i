@@ -686,61 +686,62 @@
         };
 
         // ---------- UPCOMING OPEN CHALLENGES PANEL (BOTTOM RIGHT) ----------
-        const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
-            const upcoming = bookings
-                .filter(b => isChallengeUpcoming(b, now))
-                .map(b => {
-                    const interval = getBookingInterval(b);
-                    return { booking: b, interval };
-                })
-                .filter(x => x.interval)
-                .sort((a, b) => a.interval.start - b.interval.start)
-                .slice(0, 6);
+       // SHOW ALL OPEN CHALLENGES THAT ARE NOT OVER YET (ACTIVE + FUTURE)
+const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
+    const upcoming = bookings
+        .filter(b => b.openChallenge)                    // must be open challenge
+        .map(b => {
+            const interval = getBookingInterval(b);
+            return { booking: b, interval };
+        })
+        .filter(x => x.interval && x.interval.end >= now) // still ongoing or in future
+        .sort((a, b) => a.interval.start - b.interval.start)
+        .slice(0, 6);
 
-            if (upcoming.length === 0) return null;
+    if (upcoming.length === 0) return null;
 
-            return (
-                <div className="absolute bottom-4 right-4 w-72 bg-black/70 border-2 border-yellow-400 shadow-[6px_6px_0_#000] p-3 text-xs font-mono z-30">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] text-yellow-300 uppercase retro-font">
-                            UPCOMING OPEN CHALLENGES
-                        </span>
-                        <Sparkles />
-                    </div>
-                    <div className="max-h-56 overflow-y-auto space-y-2">
-                        {upcoming.map(({ booking }) => {
-                            const venue = VENUES.find(v => v.id === booking.venueId);
-                            const venueName = venue ? venue.name : booking.venueName;
-                            return (
-                                <button
-                                    key={booking.id}
-                                    onClick={() => {
-                                        const v = venue || { id: booking.venueId, name: booking.venueName, category: 'Sports' };
-                                        onSelect(v, [booking]);
-                                    }}
-                                    className="w-full text-left bg-[#0b1120] border border-white/30 px-2 py-2 hover:bg-white/10 transition-colors"
-                                >
-                                    <div className="flex justify-between">
-                                        <span className="text-[10px] text-green-400 uppercase truncate mr-2">
-                                            {venueName}
-                                        </span>
-                                        <span className="text-[10px] text-gray-300">
-                                            {booking.date}
-                                        </span>
-                                    </div>
-                                    <div className="text-[10px] text-yellow-300 mt-1">
-                                        {booking.time}
-                                    </div>
-                                    <div className="text-[9px] text-gray-400 lowercase mt-1 truncate">
-                                        by {booking.user} ({booking.email})
-                                    </div>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            );
-        };
+    return (
+        <div className="absolute bottom-4 right-4 w-72 bg-black/70 border-2 border-yellow-400 shadow-[6px_6px_0_#000] p-3 text-xs font-mono z-30">
+            <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] text-yellow-300 uppercase retro-font">
+                    UPCOMING OPEN CHALLENGES
+                </span>
+                <Sparkles />
+            </div>
+            <div className="max-h-56 overflow-y-auto space-y-2">
+                {upcoming.map(({ booking }) => {
+                    const venue = VENUES.find(v => v.id === booking.venueId);
+                    const venueName = venue ? venue.name : booking.venueName;
+                    return (
+                        <button
+                            key={booking.id}
+                            onClick={() => {
+                                const v = venue || { id: booking.venueId, name: booking.venueName, category: 'Sports' };
+                                onSelect(v, [booking]);
+                            }}
+                            className="w-full text-left bg-[#0b1120] border border-white/30 px-2 py-2 hover:bg-white/10 transition-colors"
+                        >
+                            <div className="flex justify-between">
+                                <span className="text-[10px] text-green-400 uppercase truncate mr-2">
+                                    {venueName}
+                                </span>
+                                <span className="text-[10px] text-gray-300">
+                                    {booking.date}
+                                </span>
+                            </div>
+                            <div className="text-[10px] text-yellow-300 mt-1">
+                                {booking.time}
+                            </div>
+                            <div className="text-[9px] text-gray-400 lowercase mt-1 truncate">
+                                by {booking.user} ({booking.email})
+                            </div>
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
 
         const PixelPlanetApp = () => {
             const [user, setUser] = useState(null);
@@ -1375,3 +1376,4 @@
     </script>
 </body>
 </html>
+
