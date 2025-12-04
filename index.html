@@ -1939,6 +1939,28 @@
                 }
             };
 
+            /* HOST: update incoming commitment status (accept / reject) */
+            const handleUpdateCommitStatus = async (req, newStatus) => {
+                const question =
+                    newStatus === "accepted"
+                        ? "Accept this challenger for your open challenge?"
+                        : "Reject this challenger for your open challenge?";
+                if (!window.confirm(question)) return;
+
+                try {
+                    await window.dbFunctions.updateDoc(
+                        window.dbFunctions.doc(
+                            window.db,
+                            "challengeCommitments",
+                            req.id
+                        ),
+                        { status: newStatus }
+                    );
+                    alert(`Challenger has been ${newStatus.toUpperCase()}.`);
+                } catch (e) {
+                    alert("Failed to update challenger status: " + e.message);
+                }
+            };
 
             /* PROFILE SAVE (update userProfiles/{uid} + local state) */
             const handleSaveProfilePhone = async (newPhone) => {
@@ -2089,8 +2111,13 @@
                 WeatherIcon = CloudIcon;
             }
 
-                        const todayStr = time.toISOString().split("T")[0];
+            const todayStr = time.toISOString().split("T")[0];
 
+            const dayDateString = time.toLocaleDateString("en-IN", {
+                weekday: "short",
+                day: "2-digit",
+                month: "short"
+            });
             // Only today's active (non-cancelled) bookings
             const todaysBookings = bookings.filter((b) => {
                 const status = b.status || "active";
@@ -2283,7 +2310,7 @@
                             )}
 
 
-                            {view === "bookings" && (
+                                                        {view === "bookings" && (
                                 <div className="w-full h-full bg-[#1e293b]/90 border-4 border-white p-8 overflow-y-auto backdrop-blur-sm relative flex flex-col rounded-xl shadow-2xl">
                                     <div className="flex justify-between items-center mb-8 border-b-4 border-white pb-4">
                                         <h2 className="text-3xl text-yellow-400 retro-font">
@@ -2296,7 +2323,8 @@
                                             <ArrowLeft className="w-8 h-8" />
                                         </button>
                                     </div>
-                                                                       {/* ACTIVE / UPCOMING BOOKINGS */}
+
+                                    {/* ACTIVE / UPCOMING BOOKINGS */}
                                     {activeMyBookings.length === 0 ? (
                                         <div className="mb-10">
                                             <h3 className="text-2xl text-green-300 retro-font mb-4">
@@ -2347,13 +2375,11 @@
                                                                             {statusLabel}
                                                                         </span>
                                                                     </div>
-
                                                                     {b.openChallenge && (
                                                                         <div className="text-sm text-yellow-400 mt-2 animate-pulse">
                                                                             {" >> "}OPEN CHALLENGE FLAGGED
                                                                         </div>
                                                                     )}
-
                                                                     {b.durationMinutes && (
                                                                         <div className="text-xs text-gray-300 mt-1">
                                                                             Duration:{" "}
@@ -2379,9 +2405,7 @@
                                                                     {isSports && (
                                                                         <button
                                                                             onClick={() =>
-                                                                                handleToggleOpenChallenge(
-                                                                                    b
-                                                                                )
+                                                                                handleToggleOpenChallenge(b)
                                                                             }
                                                                             className={`mt-1 px-3 py-1 text-[10px] border-2 retro-font ${
                                                                                 b.openChallenge
@@ -2483,7 +2507,7 @@
                                         )}
                                     </div>
 
-                                                                        {/* MY CHALLENGE REQUESTS (as challenger) */}
+                                    {/* MY CHALLENGE REQUESTS (as challenger) */}
                                     <div className="mt-4 mb-8">
                                         <h3 className="text-2xl text-blue-300 retro-font mb-4">
                                             MY CHALLENGE REQUESTS
@@ -2562,9 +2586,7 @@
                                                                         variant="danger"
                                                                         className="px-2 py-1 text-[10px]"
                                                                         onClick={() =>
-                                                                            handleBackoutFromCommit(
-                                                                                req
-                                                                            )
+                                                                            handleBackoutFromCommit(req)
                                                                         }
                                                                     >
                                                                         BACKOUT
@@ -2591,8 +2613,6 @@
                                         )}
                                     </div>
 
-
-
                                     {/* INCOMING CHALLENGE REQUESTS (as host) */}
                                     <div className="mt-4">
                                         <h3 className="text-2xl text-yellow-300 retro-font mb-4">
@@ -2615,8 +2635,7 @@
                                                         <div className="text-xs text-gray-200">
                                                             Challenger:{" "}
                                                             <span className="text-blue-300">
-                                                                {req.challengerName} (
-                                                                {req.challengerEmail})
+                                                                {req.challengerName} ({req.challengerEmail})
                                                             </span>
                                                         </div>
                                                         <div className="text-xs text-gray-200">
@@ -2628,21 +2647,18 @@
                                                                     : "Not provided"}
                                                             </span>
                                                         </div>
-                                                                                                                <div className="flex items-center justify-between mt-2">
+                                                        <div className="flex items-center justify-between mt-2">
                                                             <div className="text-xs text-gray-200">
                                                                 Status:{" "}
                                                                 <span
                                                                     className={
                                                                         req.status === "accepted"
                                                                             ? "text-green-400"
-                                                                            : req.status ===
-                                                                              "rejected"
+                                                                            : req.status === "rejected"
                                                                             ? "text-red-400"
-                                                                            : req.status ===
-                                                                              "backout"
+                                                                            : req.status === "backout"
                                                                             ? "text-gray-400"
-                                                                            : req.status ===
-                                                                              "cancelled"
+                                                                            : req.status === "cancelled"
                                                                             ? "text-red-400"
                                                                             : "text-yellow-300"
                                                                     }
@@ -2694,8 +2710,14 @@
                                                                 </div>
                                                             )}
                                                         </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
+
 
                             {view === "database" && (
                                 <div className="w-full h-full bg-[#1e293b]/95 border-4 border-white p-8 overflow-y-auto backdrop-blur-sm relative flex flex-col rounded-xl shadow-2xl">
@@ -3284,4 +3306,3 @@
     </script>
 </body>
 </html>
-
