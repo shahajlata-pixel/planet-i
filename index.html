@@ -465,18 +465,12 @@
         ];
 
         const TIME_SLOTS = [
-            "09:00",
-            "10:00",
-            "11:00",
-            "12:00",
-            "13:00",
-            "14:00",
-            "15:00",
-            "16:00",
-            "17:00",
-            "18:00",
-            "19:00"
-        ];
+  "00:00","01:00","02:00","03:00","04:00","05:00",
+  "06:00","07:00","08:00","09:00","10:00","11:00",
+  "12:00","13:00","14:00","15:00","16:00","17:00",
+  "18:00","19:00","20:00","21:00","22:00","23:00"
+];
+
 
                      /* TIME HELPERS – supports legacy + new fields */
         function getBookingInterval(booking) {
@@ -1637,19 +1631,29 @@ useEffect(() => {
 
                 // Build interval using helper
                 const newInterval = getBookingInterval({
-                    date,
-                    startTime,
-                    endTime
-                });
+    date,
+    startTime,
+    endTime
+});
 
-                if (!newInterval || newInterval.end <= newInterval.start) {
-                    alert("End time must be after start time.");
-                    return;
-                }
+if (!newInterval || newInterval.end <= newInterval.start) {
+    alert("End time must be after start time.");
+    return;
+}
 
-                const durationMinutes = getDurationMinutes(newInterval);
-                const isSports = venue.category === "Sports";
-                const maxMinutes = isSports ? 120 : 180;
+/* ⬇️ STRICT BLOCK: no past start times allowed at all */
+const now = new Date();
+
+if (newInterval.start < now) {
+    alert("You cannot book a time slot that has already started or is in the past.");
+    return;
+}
+/* ⬆️ STRICT BLOCK */
+
+const durationMinutes = getDurationMinutes(newInterval);
+const isSports = venue.category === "Sports";
+const maxMinutes = isSports ? 120 : 180;
+
 
                 if (durationMinutes > maxMinutes) {
                     alert("Please request administration for permission.");
