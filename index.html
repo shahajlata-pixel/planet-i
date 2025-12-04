@@ -478,16 +478,46 @@
             "19:00"
         ];
 
-        /* TIME HELPERS */
+                     /* TIME HELPERS – supports legacy + new fields */
         function getBookingInterval(booking) {
-            if (!booking || !booking.date || !booking.time) return null;
+            if (!booking) return null;
+
+            // Prefer Firestore timestamp fields if present
+            if (booking.startDateTime && booking.endDateTime) {
+                try {
+                    const start =
+                        typeof booking.startDateTime.toDate === "function"
+                            ? booking.startDateTime.toDate()
+                            : new Date(booking.startDateTime);
+                    const end =
+                        typeof booking.endDateTime.toDate === "function"
+                            ? booking.endDateTime.toDate()
+                            : new Date(booking.endDateTime);
+                    return { start, end };
+                } catch (e) {
+                    console.log("Timestamp interval parse error", e, booking);
+                }
+            }
+
+            if (!booking.date) return null;
+
+            let startStr = booking.startTime;
+            let endStr = booking.endTime;
+
+            // Fallback: derive from legacy "time" string like "13:00 - 14:00"
+            if ((!startStr || !endStr) && booking.time) {
+                try {
+                    const parts = booking.time.split("-");
+                    startStr = startStr || (parts[0] || "").trim();
+                    endStr = endStr || (parts[1] || "").trim();
+                } catch (e) {
+                    // ignore, will bail below
+                }
+            }
+
+            if (!startStr || !endStr) return null;
+
             try {
-                const parts = booking.time.split("-");
-                if (!parts[0] || !parts[1]) return null;
-
-                const startStr = parts[0].trim();
-                const endStr = parts[1].trim();
-
                 const dateParts = booking.date.split("-").map(Number);
                 const shSm = startStr.split(":").map(Number);
                 const ehEm = endStr.split(":").map(Number);
@@ -495,13 +525,9 @@
                 const year = dateParts[0];
                 const month = dateParts[1];
                 const day = dateParts[2];
-                const sh = shSm[0];
-                const sm = shSm[1] || 0;
-                const eh = ehEm[0];
-                const em = ehEm[1] || 0;
 
-                const start = new Date(year, month - 1, day, sh, sm);
-                const end = new Date(year, month - 1, day, eh, em);
+                const start = new Date(year, month - 1, day, shSm[0], shSm[1] || 0);
+                const end = new Date(year, month - 1, day, ehEm[0], ehEm[1] || 0);
 
                 return { start, end };
             } catch (e) {
@@ -510,12 +536,31 @@
             }
         }
 
+        function intervalsOverlap(a, b) {
+            if (!a || !b) return false;
+            return a.start < b.end && a.end > b.start;
+        }
+
+        function getDurationMinutes(interval) {
+            if (!interval) return 0;
+            return Math.round((interval.end - interval.start) / (1000 * 60));
+        }
+
+        function isBookingInPast(booking, now = new Date()) {
+            const interval = getBookingInterval(booking);
+            if (!interval) return false;
+            return interval.end < now;
+        }
+
         function isChallengeActive(booking, now) {
             if (!booking || !booking.openChallenge) return false;
             const interval = getBookingInterval(booking);
             if (!interval) return false;
+            const status = booking.status || "active";
+            if (status !== "active") return false;
             return now >= interval.start && now <= interval.end;
         }
+
 
         /* GENERIC BUTTON */
         const RetroButton = ({
@@ -932,26 +977,61 @@
             );
         };
 
-        /* BOOKING MODAL */
+        /* BOOKING MODAL – start/end time & duration */
         const BookingModal = ({ venue, bookingToEdit, onClose, onConfirm }) => {
-            const [date, setDate] = useState(bookingToEdit ? bookingToEdit.date : "");
-            const [time, setTime] = useState(bookingToEdit ? bookingToEdit.time : "");
+            const initialDate = bookingToEdit ? bookingToEdit.date : "";
+            const legacyStart =
+                bookingToEdit && bookingToEdit.time
+                    ? bookingToEdit.time.split("-")[0].trim()
+                    : "";
+            const legacyEnd =
+                bookingToEdit && bookingToEdit.time
+                    ? bookingToEdit.time.split("-")[1]?.trim() || ""
+                    : "";
+
+            const [date, setDate] = useState(initialDate);
+            const [startTime, setStartTime] = useState(
+                bookingToEdit ? bookingToEdit.startTime || legacyStart : ""
+            );
+            const [endTime, setEndTime] = useState(
+                bookingToEdit ? bookingToEdit.endTime || legacyEnd : ""
+            );
             const [openChallenge, setOpenChallenge] = useState(
                 bookingToEdit ? bookingToEdit.openChallenge : false
             );
             const [purpose, setPurpose] = useState(
                 bookingToEdit ? bookingToEdit.purpose : ""
             );
+            const [durationMinutes, setDurationMinutes] = useState(null);
+
             const maxDays =
                 venue.category === "Sports"
                     ? 2
                     : venue.category === "Auditorium"
                     ? 7
                     : 30;
+
             const today = new Date().toISOString().split("T")[0];
             const maxDateObj = new Date();
             maxDateObj.setDate(maxDateObj.getDate() + maxDays);
             const maxDateStr = maxDateObj.toISOString().split("T")[0];
+
+            useEffect(() => {
+                if (!date || !startTime || !endTime) {
+                    setDurationMinutes(null);
+                    return;
+                }
+                const interval = getBookingInterval({
+                    date,
+                    startTime,
+                    endTime
+                });
+                if (!interval || interval.end <= interval.start) {
+                    setDurationMinutes(null);
+                    return;
+                }
+                setDurationMinutes(getDurationMinutes(interval));
+            }, [date, startTime, endTime]);
 
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 font-mono backdrop-blur-sm">
@@ -979,25 +1059,29 @@
                                         onChange={(e) => setDate(e.target.value)}
                                     />
                                 </div>
-                                <div>
+                                <div className="space-y-2">
                                     <label className="block text-green-400 mb-2 uppercase text-xs retro-font">
-                                        Time Slot
+                                        Time Window
                                     </label>
-                                    <select
-                                        className="w-full bg-black border-2 border-white p-2 text-white h-[42px]"
-                                        value={time}
-                                        onChange={(e) => setTime(e.target.value)}
-                                    >
-                                        <option value="">Select...</option>
-                                        {TIME_SLOTS.map((t) => (
-                                            <option
-                                                key={t}
-                                                value={`${t} - ${parseInt(t, 10) + 1}:00`}
-                                            >
-                                                {t} - {parseInt(t, 10) + 1}:00
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="time"
+                                            className="w-1/2 bg-black border-2 border-white p-2 text-white"
+                                            value={startTime}
+                                            onChange={(e) => setStartTime(e.target.value)}
+                                        />
+                                        <input
+                                            type="time"
+                                            className="w-1/2 bg-black border-2 border-white p-2 text-white"
+                                            value={endTime}
+                                            onChange={(e) => setEndTime(e.target.value)}
+                                        />
+                                    </div>
+                                    <p className="text-[11px] text-gray-300 mt-1">
+                                        {durationMinutes
+                                            ? `Duration: ${durationMinutes} minutes`
+                                            : "Select a valid start and end time (end must be after start)."}
+                                    </p>
                                 </div>
                             </div>
                             <div>
@@ -1038,7 +1122,8 @@
                                     onConfirm({
                                         venue,
                                         date,
-                                        time,
+                                        startTime,
+                                        endTime,
                                         openChallenge,
                                         purpose,
                                         id: bookingToEdit ? bookingToEdit.id : undefined
@@ -1055,6 +1140,7 @@
                 </div>
             );
         };
+
 
         /* CHALLENGE MODAL (VIEW + COMMIT) */
         const ChallengeModal = ({
@@ -1171,12 +1257,14 @@
             );
         };
 
-        /* UPCOMING CHALLENGES PANEL (collapsible) */
+        /* UPCOMING CHALLENGES PANEL (controlled by sword icon, no internal toggle) */
         const UpcomingChallengesPanel = ({ bookings, now, onSelect }) => {
-            const [isOpen, setIsOpen] = useState(true);
-
             const upcoming = bookings
-                .filter((b) => b.openChallenge)
+                .filter(
+                    (b) =>
+                        b.openChallenge &&
+                        (b.status || "active") === "active"
+                )
                 .map((b) => ({ booking: b, interval: getBookingInterval(b) }))
                 .filter((x) => x.interval && x.interval.end >= now)
                 .sort((a, b) => a.interval.start - b.interval.start)
@@ -1184,13 +1272,8 @@
 
             return (
                 <div className="absolute bottom-4 right-4 w-80 bg-black/80 border-2 border-yellow-400 shadow-[6px_6px_0_#000] p-3 text-xs font-mono z-30">
-                    <button
-                        type="button"
-                        onClick={() => setIsOpen(!isOpen)}
-                        className="flex items-center justify-between mb-2 w-full cursor-pointer"
-                    >
+                    <div className="flex items-center justify-between mb-2 w-full">
                         <div className="flex items-center gap-2">
-                            {/* dual swords vibe */}
                             <div className="flex items-center">
                                 <Swords className="w-4 h-4 text-yellow-300" />
                                 <Swords className="w-4 h-4 text-yellow-300 -scale-x-100 -ml-1" />
@@ -1199,62 +1282,61 @@
                                 UPCOMING OPEN CHALLENGES
                             </span>
                         </div>
-                        <div className="flex items-center gap-1">
-                            <Sparkles className="w-4 h-4 text-white" />
-                            <ChevronDown
-                                className={`w-3 h-3 text-yellow-300 transition-transform ${
-                                    isOpen ? "rotate-180" : ""
-                                }`}
-                            />
-                        </div>
-                    </button>
+                        <Sparkles className="w-4 h-4 text-white" />
+                    </div>
 
-                    {isOpen &&
-                        (upcoming.length === 0 ? (
-                            <p className="text-[10px] text-gray-400">
-                                No current or upcoming open challenges.
-                            </p>
-                        ) : (
-                            <div className="max-h-56 overflow-y-auto space-y-2">
-                                {upcoming.map(({ booking }) => {
-                                    const venue = VENUES.find((v) => v.id === booking.venueId);
-                                    const venueName = venue ? venue.name : booking.venueName;
-                                    return (
-                                        <button
-                                            key={booking.id}
-                                            onClick={() => {
-                                                const v =
-                                                    venue || {
-                                                        id: booking.venueId,
-                                                        name: booking.venueName,
-                                                        category: "Sports"
-                                                    };
-                                                onSelect(v, [booking]);
-                                            }}
-                                            className="w-full text-left bg-[#0b1120] border border-white/30 px-2 py-2 hover:bg-white/10 transition-colors"
-                                        >
-                                            <div className="flex justify-between">
-                                                <span className="text-[10px] text-green-400 uppercase truncate mr-2">
-                                                    {venueName}
-                                                </span>
-                                                <span className="text-[10px] text-gray-300">
-                                                    {booking.date}
-                                                </span>
-                                            </div>
-                                            <div className="text-[10px] text-yellow-300 mt-1">
-                                                {booking.time}
-                                            </div>
-                                            <div className="text-[9px] text-gray-400 lowercase mt-1 truncate">
-                                                by {booking.user} ({booking.email})
-                                            </div>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        ))}
+                    {upcoming.length === 0 ? (
+                        <p className="text-[10px] text-gray-400">
+                            No current or upcoming open challenges.
+                        </p>
+                    ) : (
+                        <div className="max-h-56 overflow-y-auto space-y-2">
+                            {upcoming.map(({ booking }) => {
+                                const venue = VENUES.find((v) => v.id === booking.venueId);
+                                const venueName = venue ? venue.name : booking.venueName;
+                                const timeLabel =
+                                    booking.time ||
+                                    (booking.startTime && booking.endTime
+                                        ? `${booking.startTime} - ${booking.endTime}`
+                                        : "Time TBD");
+
+                                return (
+                                    <button
+                                        key={booking.id}
+                                        onClick={() => {
+                                            const v =
+                                                venue || {
+                                                    id: booking.venueId,
+                                                    name: booking.venueName,
+                                                    category: "Sports"
+                                                };
+                                            onSelect(v, [booking]);
+                                        }}
+                                        className="w-full text-left bg-[#0b1120] border border-white/30 px-2 py-2 hover:bg-white/10 transition-colors"
+                                    >
+                                        <div className="flex justify-between">
+                                            <span className="text-[10px] text-green-400 uppercase truncate mr-2">
+                                                {venueName}
+                                            </span>
+                                            <span className="text-[10px] text-gray-300">
+                                                {booking.date}
+                                            </span>
+                                        </div>
+                                        <div className="text-[10px] text-yellow-300 mt-1">
+                                            {timeLabel}
+                                        </div>
+                                        <div className="text-[9px] text-gray-400 lowercase mt-1 truncate">
+                                            by {booking.user} ({booking.email})
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             );
         };
+
 
         /* MAIN APP */
         const PixelPlanetApp = () => {
@@ -1276,7 +1358,7 @@
             const [expandedCat, setExpandedCat] = useState(null);
             const [showProfile, setShowProfile] = useState(false);
 
-            const [sortOrder, setSortOrder] = useState("asc");
+                        const [sortOrder, setSortOrder] = useState("asc");
             const [sortColumn, setSortColumn] = useState("date");
             const [colFilters, setColFilters] = useState({
                 venue: "",
@@ -1284,17 +1366,20 @@
                 time: "",
                 user: "",
                 email: "",
+                phone: "",
                 purpose: "",
                 challenge: "",
-                bookedAt: "",
-                phone: ""
+                status: "",
+                bookedAt: ""
             });
+
 
             const [challengeInfo, setChallengeInfo] = useState(null);
 
             const [myChallengeRequests, setMyChallengeRequests] = useState([]);
             const [incomingChallengeRequests, setIncomingChallengeRequests] =
                 useState([]);
+	     const [showChallengesPanel, setShowChallengesPanel] = useState(false);
 
             /* AUTH + LOAD PROFILE */
             useEffect(() => {
@@ -1384,7 +1469,59 @@
                 };
             }, []);
 
+            // Normalize legacy bookings + auto mark completed in Firestore
+            const normalizeAndAutoCompleteBookings = async (loadedBookings) => {
+                if (!window.dbFunctions || !window.db) return;
+                const now = new Date();
+                const updates = [];
+
+                loadedBookings.forEach((b) => {
+                    const updateData = {};
+                    let needsUpdate = false;
+
+                    const interval = getBookingInterval(b);
+                    if (interval) {
+                        if (!b.startDateTime) {
+                            updateData.startDateTime = interval.start;
+                            needsUpdate = true;
+                        }
+                        if (!b.endDateTime) {
+                            updateData.endDateTime = interval.end;
+                            needsUpdate = true;
+                        }
+                        if (!b.durationMinutes) {
+                            updateData.durationMinutes = getDurationMinutes(interval);
+                            needsUpdate = true;
+                        }
+
+                        const status = b.status || "active";
+                        if (status === "active" && interval.end < now) {
+                            updateData.status = "completed";
+                            needsUpdate = true;
+                        }
+                    }
+
+                    if (needsUpdate) {
+                        updates.push(
+                            window.dbFunctions.updateDoc(
+                                window.dbFunctions.doc(window.db, "bookings", b.id),
+                                updateData
+                            )
+                        );
+                    }
+                });
+
+                if (updates.length > 0) {
+                    try {
+                        await Promise.all(updates);
+                    } catch (e) {
+                        console.log("Normalization/autocomplete updates failed:", e);
+                    }
+                }
+            };
+
             /* BOOKINGS STREAM */
+                        /* BOOKINGS STREAM */
             useEffect(() => {
                 if (!user || !window.dbFunctions) return;
                 const q = window.dbFunctions.query(
@@ -1397,9 +1534,13 @@
                         loaded.push({ id: docSnap.id, ...docSnap.data() })
                     );
                     setBookings(loaded);
+
+                    // Background: normalize legacy docs + auto-complete statuses
+                    normalizeAndAutoCompleteBookings(loaded);
                 });
                 return () => unsubscribe();
             }, [user]);
+
 
             /* CHALLENGE COMMITMENTS STREAMS */
             useEffect(() => {
@@ -1466,42 +1607,87 @@
                 };
             }, [user]);
 
-            /* BOOKING CONFIRM */
+                        /* BOOKING CONFIRM – start/end times, duration limits, no overlap */
             const handleBookingConfirm = async (data) => {
-                if (!data.date || !data.time) {
-                    alert("Select Date/Time");
-                    return;
-                }
-                const isConflict = bookings.some(
-                    (b) =>
-                        b.venueId === data.venue.id &&
-                        b.date === data.date &&
-                        b.time === data.time &&
-                        b.id !== data.id
-                );
-                if (isConflict) {
-                    alert("Slot already booked!");
+                const { venue, date, startTime, endTime, openChallenge, purpose, id } = data;
+
+                if (!date || !startTime || !endTime) {
+                    alert("Please select a date, start time and end time.");
                     return;
                 }
 
-                const payload = {
-                    venueName: data.venue.name,
-                    venueId: data.venue.id,
+                // Build interval using helper
+                const newInterval = getBookingInterval({
+                    date,
+                    startTime,
+                    endTime
+                });
+
+                if (!newInterval || newInterval.end <= newInterval.start) {
+                    alert("End time must be after start time.");
+                    return;
+                }
+
+                const durationMinutes = getDurationMinutes(newInterval);
+                const isSports = venue.category === "Sports";
+                const maxMinutes = isSports ? 120 : 180;
+
+                if (durationMinutes > maxMinutes) {
+                    alert("Please request administration for permission.");
+                    return;
+                }
+
+                // Strict no-overlap for same venue + same date
+                const isConflict = bookings.some((b) => {
+                    if (b.venueId !== venue.id) return false;
+                    if (b.date !== date) return false;
+                    if (b.id === id) return false; // allow updating this booking
+                    if ((b.status || "active") === "cancelled") return false;
+
+                    const existingInterval = getBookingInterval(b);
+                    if (!existingInterval) return false;
+
+                    return intervalsOverlap(newInterval, existingInterval);
+                });
+
+                if (isConflict) {
+                    alert("Slot already booked / overlapping. Please choose another time.");
+                    return;
+                }
+
+                const timeDisplay =
+                    startTime && endTime ? `${startTime} - ${endTime}` : "";
+
+                // Preserve status if updating, otherwise default to "active"
+                const existing = id ? bookings.find((b) => b.id === id) : null;
+                const currentStatus = existing && existing.status ? existing.status : "active";
+
+                                const payload = {
+                    venueName: venue.name,
+                    venueId: venue.id,
+                    venueCategory: venue.category, // for duration rules
                     user: user.name,
                     email: user.email,
                     phone: user.phone || "",
-                    date: data.date,
-                    time: data.time,
-                    purpose: data.purpose || "N/A",
-                    openChallenge: data.openChallenge || false,
+                    date,
+                    time: timeDisplay, // legacy display string
+                    startTime,
+                    endTime,
+                    startDateTime: newInterval.start, // stored as Firestore timestamp
+                    endDateTime: newInterval.end,     // stored as Firestore timestamp
+                    durationMinutes,
+                    purpose: purpose || "N/A",
+                    openChallenge: !!openChallenge,
                     bookingOwnerUid: user.uid,
+                    status: currentStatus,
                     timestamp: new Date()
                 };
 
+
                 try {
-                    if (data.id) {
+                    if (id) {
                         await window.dbFunctions.updateDoc(
-                            window.dbFunctions.doc(window.db, "bookings", data.id),
+                            window.dbFunctions.doc(window.db, "bookings", id),
                             payload
                         );
                         alert("Booking Updated!");
@@ -1520,18 +1706,95 @@
                 setEditingBooking(null);
             };
 
-            /* CANCEL BOOKING */
+
+                        /* CANCEL BOOKING – mark as cancelled + update related commitments */
             const handleCancel = async (id) => {
-                if (window.confirm("Cancel this booking?")) {
+                const booking = bookings.find((b) => b.id === id);
+                if (!booking) return;
+
+                const confirmText =
+                    "Cancel this booking? Challengers (if any) will be notified via status update.";
+                if (!window.confirm(confirmText)) return;
+
+                try {
+                    // 1) Mark booking as cancelled and turn off open challenge
+                    await window.dbFunctions.updateDoc(
+                        window.dbFunctions.doc(window.db, "bookings", id),
+                        {
+                            status: "cancelled",
+                            openChallenge: false
+                        }
+                    );
+
+                    // 2) Mark all related challengeCommitments as cancelled
                     try {
-                        await window.dbFunctions.deleteDoc(
-                            window.dbFunctions.doc(window.db, "bookings", id)
+                        const commitsRef = window.dbFunctions.collection(
+                            window.db,
+                            "challengeCommitments"
                         );
+                        const q = window.dbFunctions.query(
+                            commitsRef,
+                            window.dbFunctions.where("bookingId", "==", id)
+                        );
+                        const snap = await window.dbFunctions.getDocs(q);
+
+                        const updates = [];
+                        snap.forEach((docSnap) => {
+                            updates.push(
+                                window.dbFunctions.updateDoc(
+                                    window.dbFunctions.doc(
+                                        window.db,
+                                        "challengeCommitments",
+                                        docSnap.id
+                                    ),
+                                    { status: "cancelled" }
+                                )
+                            );
+                        });
+
+                        if (updates.length > 0) {
+                            await Promise.all(updates);
+                        }
                     } catch (e) {
-                        alert("Failed to cancel.");
+                        console.log("Failed to update commitments on cancel:", e);
                     }
+
+                    alert("Booking cancelled. Challengers have been updated.");
+                } catch (e) {
+                    alert("Failed to cancel booking: " + e.message);
                 }
             };
+	  /* HOST: Toggle openChallenge ON/OFF (active bookings only) */
+            const handleToggleOpenChallenge = async (booking) => {
+                const status = booking.status || "active";
+                if (status !== "active" || isBookingInPast(booking, time)) {
+                    alert("Open challenge can only be changed for active/upcoming bookings.");
+                    return;
+                }
+
+                const newValue = !booking.openChallenge;
+                const msg = newValue
+                    ? "Turn ON open challenge for this booking?"
+                    : "Turn OFF open challenge? New challengers will not be able to join.";
+
+                if (!window.confirm(msg)) return;
+
+                try {
+                    await window.dbFunctions.updateDoc(
+                        window.dbFunctions.doc(window.db, "bookings", booking.id),
+                        { openChallenge: newValue }
+                    );
+                    if (!newValue) {
+                        alert(
+                            "Open challenge turned OFF. Existing challengers remain visible as history."
+                        );
+                    }
+                } catch (e) {
+                    alert("Failed to update open challenge flag: " + e.message);
+                }
+            };
+
+
 
             const handleEdit = (booking) => {
                 const venueObj =
@@ -1582,7 +1845,7 @@
                 }
             };
 
-            /* COMMIT TO CHALLENGE → challengeCommitments collection */
+                       /* COMMIT TO CHALLENGE → challengeCommitments collection */
             const handleCommitToChallenge = async (booking) => {
                 if (!user) return;
                 if (booking.email === user.email) {
@@ -1590,8 +1853,24 @@
                     return;
                 }
 
+                // Re-check booking state to avoid committing to closed/cancelled/past challenge
+                const latest = bookings.find((b) => b.id === booking.id) || booking;
+                const status = latest.status || "active";
+
+                if (!latest.openChallenge || status !== "active") {
+                    alert(
+                        "This open challenge is no longer accepting challengers (turned off or cancelled)."
+                    );
+                    return;
+                }
+
+                if (isBookingInPast(latest, time)) {
+                    alert("This booking is already in the past.");
+                    return;
+                }
+
                 const alreadyCommitted = myChallengeRequests.some(
-                    (req) => req.bookingId === booking.id
+                    (req) => req.bookingId === latest.id
                 );
                 if (alreadyCommitted) {
                     alert("You have already committed to this challenge.");
@@ -1605,20 +1884,24 @@
                 }
 
                 const newCommit = {
-                    bookingId: booking.id,
-                    venueName: booking.venueName,
-                    date: booking.date,
-                    time: booking.time,
+                    bookingId: latest.id,
+                    venueName: latest.venueName,
+                    date: latest.date,
+                    time:
+                        latest.time ||
+                        (latest.startTime && latest.endTime
+                            ? `${latest.startTime} - ${latest.endTime}`
+                            : "Time TBD"),
 
                     challengerUid: user.uid,
                     challengerEmail: user.email,
                     challengerName: user.name,
                     challengerPhone: user.phone || "",
 
-                    bookingOwnerUid: booking.bookingOwnerUid || null,
-                    hostEmail: booking.email,
-                    hostName: booking.user,
-                    hostPhone: booking.phone || "",
+                    bookingOwnerUid: latest.bookingOwnerUid || null,
+                    hostEmail: latest.email,
+                    hostName: latest.user,
+                    hostPhone: latest.phone || "",
 
                     status: "pending",
                     createdAt: new Date()
@@ -1635,8 +1918,12 @@
                 }
             };
 
-            /* HOST ACCEPT / REJECT commitment docs */
-            const handleUpdateCommitStatus = async (commit, newStatus) => {
+            /* CHALLENGER BACKOUT from a commitment */
+            const handleBackoutFromCommit = async (commit) => {
+                const confirmText =
+                    "Back out from this challenge? The host will see that you backed out.";
+                if (!window.confirm(confirmText)) return;
+
                 try {
                     await window.dbFunctions.updateDoc(
                         window.dbFunctions.doc(
@@ -1644,13 +1931,14 @@
                             "challengeCommitments",
                             commit.id
                         ),
-                        { status: newStatus }
+                        { status: "backout" }
                     );
-                    alert("Updated challenge request.");
+                    alert("You have backed out from this challenge.");
                 } catch (e) {
-                    alert("Failed to update status: " + e.message);
+                    alert("Failed to back out: " + e.message);
                 }
             };
+
 
             /* PROFILE SAVE (update userProfiles/{uid} + local state) */
             const handleSaveProfilePhone = async (newPhone) => {
@@ -1676,18 +1964,37 @@
             };
 
             /* DATABASE TABLE FILTERING/SORTING */
-            const filteredBookings = bookings
+                        const filteredBookings = bookings
                 .filter((b) => {
                     let bookedAtStr = "";
                     if (b.timestamp && typeof b.timestamp.toDate === "function") {
                         bookedAtStr = b.timestamp.toDate().toLocaleTimeString();
                     }
+
+                    const status = (b.status || "active").toLowerCase();
+
+                    const statusFilter = colFilters.status.toLowerCase();
+                    const statusMatches =
+                        statusFilter === "" ||
+                        status === statusFilter ||
+                        (statusFilter === "other" &&
+                            status !== "active" &&
+                            status !== "cancelled" &&
+                            status !== "completed");
+
                     return (
-                        b.venueName.toLowerCase().includes(colFilters.venue.toLowerCase()) &&
+                        b.venueName
+                            .toLowerCase()
+                            .includes(colFilters.venue.toLowerCase()) &&
                         b.date.toLowerCase().includes(colFilters.date.toLowerCase()) &&
-                        b.time.toLowerCase().includes(colFilters.time.toLowerCase()) &&
+                        (b.time || "")
+                            .toLowerCase()
+                            .includes(colFilters.time.toLowerCase()) &&
                         b.user.toLowerCase().includes(colFilters.user.toLowerCase()) &&
                         b.email.toLowerCase().includes(colFilters.email.toLowerCase()) &&
+                        (b.phone || "")
+                            .toLowerCase()
+                            .includes(colFilters.phone.toLowerCase()) &&
                         (b.purpose || "")
                             .toLowerCase()
                             .includes(colFilters.purpose.toLowerCase()) &&
@@ -1697,18 +2004,17 @@
                                 : colFilters.challenge === "no"
                                 ? !b.openChallenge
                                 : false)) &&
+                        statusMatches &&
                         bookedAtStr
                             .toLowerCase()
-                            .includes(colFilters.bookedAt.toLowerCase()) &&
-                        (b.phone || "")
-                            .toLowerCase()
-                            .includes(colFilters.phone.toLowerCase())
+                            .includes(colFilters.bookedAt.toLowerCase())
                     );
                 })
+
                 .sort((a, b) => {
                     const isAsc = sortOrder === "asc";
                     let compareA, compareB;
-                    switch (sortColumn) {
+                                        switch (sortColumn) {
                         case "venue":
                             compareA = a.venueName;
                             compareB = b.venueName;
@@ -1721,21 +2027,25 @@
                             compareA = a.email;
                             compareB = b.email;
                             break;
+                        case "phone":
+                            compareA = a.phone || "";
+                            compareB = b.phone || "";
+                            break;
                         case "purpose":
-                            compareA = a.purpose;
-                            compareB = b.purpose;
+                            compareA = a.purpose || "";
+                            compareB = b.purpose || "";
                             break;
                         case "challenge":
                             compareA = a.openChallenge;
                             compareB = b.openChallenge;
                             break;
-                        case "time":
-                            compareA = a.time;
-                            compareB = b.time;
+                        case "status":
+                            compareA = (a.status || "active").toLowerCase();
+                            compareB = (b.status || "active").toLowerCase();
                             break;
-                        case "phone":
-                            compareA = a.phone || "";
-                            compareB = b.phone || "";
+                        case "time":
+                            compareA = a.time || "";
+                            compareB = b.time || "";
                             break;
                         case "bookedAt":
                             compareA =
@@ -1753,6 +2063,7 @@
                             const dateB = new Date(b.date);
                             return isAsc ? dateA - dateB : dateB - dateA;
                     }
+
                     if (typeof compareA === "string")
                         return isAsc
                             ? compareA.localeCompare(compareB)
@@ -1778,14 +2089,29 @@
                 WeatherIcon = CloudIcon;
             }
 
-            const todayStr = time.toISOString().split("T")[0];
-            const todaysBookings = bookings.filter((b) => b.date === todayStr);
-            const myBookings = bookings.filter((b) => b.email === user.email);
-            const dayDateString = time.toLocaleDateString("en-IN", {
-                weekday: "short",
-                day: "2-digit",
-                month: "short"
+                        const todayStr = time.toISOString().split("T")[0];
+
+            // Only today's active (non-cancelled) bookings
+            const todaysBookings = bookings.filter((b) => {
+                const status = b.status || "active";
+                return b.date === todayStr && status === "active";
             });
+
+            const myBookings = bookings.filter((b) => b.email === user.email);
+
+            const activeMyBookings = myBookings.filter((b) => {
+                const status = b.status || "active";
+                if (status !== "active") return false;
+                return !isBookingInPast(b, time);
+            });
+
+            const pastMyBookings = myBookings.filter((b) => {
+                const status = b.status || "active";
+                // Past if endTime is in the past OR status is not active (cancelled/completed)
+                return isBookingInPast(b, time) || status !== "active";
+            });
+
+
 
             return (
                 <div className="min-h-screen flex flex-col relative custom-cursor overflow-x-hidden">
@@ -1804,7 +2130,20 @@
                                 </p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-4">
+                                               <div className="flex items-center gap-4">
+                            {/* Sword icon exclusively controls Open Challenges panel */}
+                            <button
+                                onClick={() => setShowChallengesPanel((prev) => !prev)}
+                                className={`p-2 rounded-full border-2 transition-colors ${
+                                    showChallengesPanel
+                                        ? "border-yellow-400 bg-yellow-500/20 text-yellow-300"
+                                        : "border-transparent hover:border-yellow-400 hover:bg-yellow-500/10 text-yellow-300"
+                                }`}
+                                title="Toggle Upcoming Open Challenges"
+                            >
+                                <Swords className="w-5 h-5" />
+                            </button>
+
                             <button
                                 onClick={() => setShowProfile(true)}
                                 className="text-right hidden sm:block retro-font hover:opacity-80"
@@ -1821,6 +2160,7 @@
                                 <LogOut />
                             </button>
                         </div>
+
                     </header>
 
                     <div className="flex-1 flex flex-col md:flex-row relative z-10 min-h-[calc(100vh-80px)]">
@@ -1922,7 +2262,7 @@
 
                         {/* MAIN CONTENT */}
                         <main className="flex-1 p-6 h-full overflow-y-auto relative">
-                            {view === "map" && (
+                                                       {view === "map" && (
                                 <div className="relative">
                                     <PixelEarth
                                         venues={VENUES}
@@ -1930,15 +2270,18 @@
                                         onVenueClick={handleVenueClick}
                                         now={time}
                                     />
-                                    <UpcomingChallengesPanel
-                                        bookings={bookings}
-                                        now={time}
-                                        onSelect={(venue, challenges) =>
-                                            setChallengeInfo({ venue, challenges })
-                                        }
-                                    />
+                                    {showChallengesPanel && (
+                                        <UpcomingChallengesPanel
+                                            bookings={bookings}
+                                            now={time}
+                                            onSelect={(venue, challenges) =>
+                                                setChallengeInfo({ venue, challenges })
+                                            }
+                                        />
+                                    )}
                                 </div>
                             )}
+
 
                             {view === "bookings" && (
                                 <div className="w-full h-full bg-[#1e293b]/90 border-4 border-white p-8 overflow-y-auto backdrop-blur-sm relative flex flex-col rounded-xl shadow-2xl">
@@ -1953,54 +2296,192 @@
                                             <ArrowLeft className="w-8 h-8" />
                                         </button>
                                     </div>
-                                    {myBookings.length === 0 ? (
-                                        <div className="flex-1 flex items-center justify-center">
-                                            <p className="text-gray-400 retro-font text-xl animate-pulse">
-                                                NO ACTIVE QUESTS.
-                                            </p>
+                                                                       {/* ACTIVE / UPCOMING BOOKINGS */}
+                                    {activeMyBookings.length === 0 ? (
+                                        <div className="mb-10">
+                                            <h3 className="text-2xl text-green-300 retro-font mb-4">
+                                                ACTIVE / UPCOMING BOOKINGS
+                                            </h3>
+                                            <div className="flex items-center justify-center">
+                                                <p className="text-gray-400 retro-font text-xl animate-pulse text-center">
+                                                    NO ACTIVE QUESTS.
+                                                </p>
+                                            </div>
                                         </div>
                                     ) : (
-                                        <div className="grid gap-4 w-full mb-10">
-                                            {myBookings.map((b) => (
-                                                <div
-                                                    key={b.id}
-                                                    className="bg-black/40 border-2 border-white p-6 flex flex-col gap-4 hover:bg-white/5 transition-colors"
-                                                >
-                                                    <div className="flex justify-between items-center">
-                                                        <div>
-                                                            <div className="text-xl text-green-400 font-bold uppercase mb-2 retro-font">
-                                                                {b.venueName}
-                                                            </div>
-                                                            <div className="text-md text-white font-mono">
-                                                                {b.date} @ {b.time}
-                                                            </div>
-                                                            {b.openChallenge && (
-                                                                <div className="text-sm text-yellow-400 mt-2 animate-pulse">
-                                                                    {" >> "}OPEN CHALLENGE FLAGGED
+                                        <div className="mb-10">
+                                            <h3 className="text-2xl text-green-300 retro-font mb-4">
+                                                ACTIVE / UPCOMING BOOKINGS
+                                            </h3>
+                                            <div className="grid gap-4 w-full">
+                                                {activeMyBookings.map((b) => {
+                                                    const statusLabel = (b.status || "active").toUpperCase();
+                                                    const timeLabel =
+                                                        b.time ||
+                                                        (b.startTime && b.endTime
+                                                            ? `${b.startTime} - ${b.endTime}`
+                                                            : "Time TBD");
+                                                    const venueObj = VENUES.find(
+                                                        (v) => v.id === b.venueId
+                                                    );
+                                                    const isSports =
+                                                        venueObj &&
+                                                        venueObj.category === "Sports";
+
+                                                    return (
+                                                        <div
+                                                            key={b.id}
+                                                            className="bg-black/40 border-2 border-white p-6 flex flex-col gap-4 hover:bg-white/5 transition-colors"
+                                                        >
+                                                            <div className="flex justify-between items-start gap-4">
+                                                                <div>
+                                                                    <div className="text-xl text-green-400 font-bold uppercase mb-2 retro-font">
+                                                                        {b.venueName}
+                                                                    </div>
+                                                                    <div className="text-md text-white font-mono">
+                                                                        {b.date} @ {timeLabel}
+                                                                    </div>
+                                                                    <div className="text-xs text-gray-300 mt-1">
+                                                                        Status:{" "}
+                                                                        <span className="text-green-400">
+                                                                            {statusLabel}
+                                                                        </span>
+                                                                    </div>
+                                                                    {b.openChallenge && (
+                                                                        <div className="text-sm text-yellow-400 mt-2 animate-pulse">
+                                                                            {" >> "}OPEN CHALLENGE FLAGGED
+                                                                        </div>
+                                                                    )}
+                                                                    {b.durationMinutes && (
+                                                                        <div className="text-xs text-gray-300 mt-1">
+                                                                            Duration:{" "}
+                                                                            <span className="text-blue-300">
+                                                                                {b.durationMinutes} minutes
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
-                                                            )}
+                                                                <div className="flex flex-col gap-2 items-end">
+                                                                    <button
+                                                                        onClick={() => handleEdit(b)}
+                                                                        className="bg-blue-500/20 p-2 rounded hover:bg-blue-500 text-blue-400 hover:text-white transition-colors"
+                                                                    >
+                                                                        <EditIcon className="w-4 h-4" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleCancel(b.id)}
+                                                                        className="bg-red-500/20 p-2 rounded hover:bg-red-500 text-red-400 hover:text-white transition-colors"
+                                                                    >
+                                                                        <XIcon className="w-4 h-4" />
+                                                                    </button>
+                                                                    {isSports && (
+                                                                        <button
+                                                                            onClick={() =>
+                                                                                handleToggleOpenChallenge(
+                                                                                    b
+                                                                                )
+                                                                            }
+                                                                            className={`mt-1 px-3 py-1 text-[10px] border-2 retro-font ${
+                                                                                b.openChallenge
+                                                                                    ? "border-yellow-400 text-yellow-300 hover:bg-yellow-500/10"
+                                                                                    : "border-gray-500 text-gray-300 hover:bg-gray-500/10"
+                                                                            }`}
+                                                                        >
+                                                                            {b.openChallenge
+                                                                                ? "TURN OFF OPEN CHALLENGE"
+                                                                                : "TURN ON OPEN CHALLENGE"}
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                onClick={() => handleEdit(b)}
-                                                                className="bg-blue-500/20 p-2 rounded hover:bg-blue-500 text-blue-400 hover:text-white transition-colors"
-                                                            >
-                                                                <EditIcon className="w-4 h-4" />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleCancel(b.id)}
-                                                                className="bg-red-500/20 p-2 rounded hover:bg-red-500 text-red-400 hover:text-white transition-colors"
-                                                            >
-                                                                <XIcon className="w-4 h-4" />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
                                     )}
 
-                                    {/* MY CHALLENGE REQUESTS (as challenger) */}
+                                    {/* PAST BOOKINGS – READ ONLY PANEL */}
+                                    <div className="mb-10">
+                                        <h3 className="text-2xl text-orange-300 retro-font mb-4">
+                                            PAST BOOKINGS
+                                        </h3>
+                                        {pastMyBookings.length === 0 ? (
+                                            <p className="text-gray-400 text-sm">
+                                                No past bookings yet. Once a booking&apos;s end time
+                                                has passed (or it is cancelled/completed), it will
+                                                appear here as read-only history.
+                                            </p>
+                                        ) : (
+                                            <div className="grid gap-4 w-full">
+                                                {pastMyBookings.map((b) => {
+                                                    const statusLabel = (b.status || "active").toUpperCase();
+                                                    const timeLabel =
+                                                        b.time ||
+                                                        (b.startTime && b.endTime
+                                                            ? `${b.startTime} - ${b.endTime}`
+                                                            : "Time TBD");
+                                                    const interval = getBookingInterval(b);
+                                                    const endedAt =
+                                                        interval && interval.end
+                                                            ? interval.end.toLocaleString([], {
+                                                                  day: "2-digit",
+                                                                  month: "short",
+                                                                  hour: "2-digit",
+                                                                  minute: "2-digit"
+                                                              })
+                                                            : null;
+
+                                                    return (
+                                                        <div
+                                                            key={b.id}
+                                                            className="bg-black/40 border-2 border-gray-500 p-6 flex flex-col gap-2"
+                                                        >
+                                                            <div className="flex justify-between items-start gap-4">
+                                                                <div>
+                                                                    <div className="text-lg text-gray-200 font-bold uppercase mb-1 retro-font">
+                                                                        {b.venueName}
+                                                                    </div>
+                                                                    <div className="text-sm text-white font-mono">
+                                                                        {b.date} @ {timeLabel}
+                                                                    </div>
+                                                                    {b.durationMinutes && (
+                                                                        <div className="text-xs text-gray-300 mt-1">
+                                                                            Duration:{" "}
+                                                                            <span className="text-blue-300">
+                                                                                {b.durationMinutes} minutes
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                    {endedAt && (
+                                                                        <div className="text-xs text-gray-400 mt-1">
+                                                                            Ended at:{" "}
+                                                                            <span className="text-gray-200">
+                                                                                {endedAt}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="text-right text-xs text-gray-300">
+                                                                    Status:{" "}
+                                                                    <span className="text-orange-300">
+                                                                        {statusLabel}
+                                                                    </span>
+                                                                    <div className="mt-1 text-[10px] text-gray-500">
+                                                                        (Past bookings are view-only:
+                                                                        no edit, cancel or open
+                                                                        challenge changes.)
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                                                        {/* MY CHALLENGE REQUESTS (as challenger) */}
                                     <div className="mt-4 mb-8">
                                         <h3 className="text-2xl text-blue-300 retro-font mb-4">
                                             MY CHALLENGE REQUESTS
@@ -2011,50 +2492,104 @@
                                             </p>
                                         ) : (
                                             <div className="grid gap-4">
-                                                {myChallengeRequests.map((req) => (
-                                                    <div
-                                                        key={req.id}
-                                                        className="bg-black/40 border-2 border-blue-400 p-4 flex flex-col gap-2"
-                                                    >
-                                                        <div className="text-sm text-green-400 font-mono">
-                                                            {req.venueName} — {req.date} — {req.time}
+                                                {myChallengeRequests.map((req) => {
+                                                    const statusClass =
+                                                        req.status === "accepted"
+                                                            ? "text-green-400"
+                                                            : req.status === "rejected"
+                                                            ? "text-red-400"
+                                                            : req.status === "backout"
+                                                            ? "text-gray-400"
+                                                            : req.status === "cancelled"
+                                                            ? "text-red-400"
+                                                            : "text-yellow-300";
+
+                                                    const canBackout =
+                                                        req.status !== "backout" &&
+                                                        req.status !== "cancelled";
+
+                                                    const relatedBooking = bookings.find(
+                                                        (b) => b.id === req.bookingId
+                                                    );
+                                                    const bookingStatus =
+                                                        relatedBooking &&
+                                                        (relatedBooking.status || "active");
+                                                    const hostTurnedOffOpenChallenge =
+                                                        relatedBooking &&
+                                                        bookingStatus === "active" &&
+                                                        !relatedBooking.openChallenge;
+                                                    const bookingCancelled =
+                                                        relatedBooking &&
+                                                        bookingStatus === "cancelled";
+
+                                                    return (
+                                                        <div
+                                                            key={req.id}
+                                                            className="bg-black/40 border-2 border-blue-400 p-4 flex flex-col gap-2"
+                                                        >
+                                                            <div className="text-sm text-green-400 font-mono">
+                                                                {req.venueName} — {req.date} — {req.time}
+                                                            </div>
+                                                            <div className="text-xs text-gray-200">
+                                                                Host:{" "}
+                                                                <span className="text-blue-300">
+                                                                    {req.hostName} ({req.hostEmail})
+                                                                </span>
+                                                            </div>
+                                                            <div className="text-xs text-gray-200">
+                                                                Host Phone:{" "}
+                                                                <span className="text-yellow-300">
+                                                                    {req.hostPhone &&
+                                                                    req.hostPhone.length > 0
+                                                                        ? req.hostPhone
+                                                                        : "Not provided"}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center justify-between mt-2">
+                                                                <div className="text-xs text-gray-200">
+                                                                    Status:{" "}
+                                                                    <span className={statusClass}>
+                                                                        {req.status
+                                                                            ? req.status.toUpperCase()
+                                                                            : "PENDING"}
+                                                                    </span>
+                                                                </div>
+                                                                {canBackout && (
+                                                                    <RetroButton
+                                                                        type="button"
+                                                                        variant="danger"
+                                                                        className="px-2 py-1 text-[10px]"
+                                                                        onClick={() =>
+                                                                            handleBackoutFromCommit(
+                                                                                req
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        BACKOUT
+                                                                    </RetroButton>
+                                                                )}
+                                                            </div>
+                                                            {hostTurnedOffOpenChallenge && (
+                                                                <div className="text-[10px] text-yellow-300 mt-1">
+                                                                    Host has TURNED OFF open challenge
+                                                                    for this booking. No new challengers
+                                                                    can join, but your status is recorded.
+                                                                </div>
+                                                            )}
+                                                            {bookingCancelled && (
+                                                                <div className="text-[10px] text-red-400 mt-1">
+                                                                    Host has CANCELLED this booking. This
+                                                                    challenge is no longer active.
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        <div className="text-xs text-gray-200">
-                                                            Host:{" "}
-                                                            <span className="text-blue-300">
-                                                                {req.hostName} ({req.hostEmail})
-                                                            </span>
-                                                        </div>
-                                                        <div className="text-xs text-gray-200">
-                                                            Host Phone:{" "}
-                                                            <span className="text-yellow-300">
-                                                                {req.hostPhone &&
-                                                                req.hostPhone.length > 0
-                                                                    ? req.hostPhone
-                                                                    : "Not provided"}
-                                                            </span>
-                                                        </div>
-                                                        <div className="text-xs text-gray-200 mt-1">
-                                                            Status:{" "}
-                                                            <span
-                                                                className={
-                                                                    req.status === "accepted"
-                                                                        ? "text-green-400"
-                                                                        : req.status === "rejected"
-                                                                        ? "text-red-400"
-                                                                        : "text-yellow-300"
-                                                                }
-                                                            >
-                                                                {req.status
-                                                                    ? req.status.toUpperCase()
-                                                                    : "PENDING"}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         )}
                                     </div>
+
+
 
                                     {/* INCOMING CHALLENGE REQUESTS (as host) */}
                                     <div className="mt-4">
@@ -2091,7 +2626,7 @@
                                                                     : "Not provided"}
                                                             </span>
                                                         </div>
-                                                        <div className="flex items-center justify-between mt-2">
+                                                                                                                <div className="flex items-center justify-between mt-2">
                                                             <div className="text-xs text-gray-200">
                                                                 Status:{" "}
                                                                 <span
@@ -2101,6 +2636,12 @@
                                                                             : req.status ===
                                                                               "rejected"
                                                                             ? "text-red-400"
+                                                                            : req.status ===
+                                                                              "backout"
+                                                                            ? "text-gray-400"
+                                                                            : req.status ===
+                                                                              "cancelled"
+                                                                            ? "text-red-400"
                                                                             : "text-yellow-300"
                                                                     }
                                                                 >
@@ -2108,6 +2649,17 @@
                                                                         ? req.status.toUpperCase()
                                                                         : "PENDING"}
                                                                 </span>
+                                                                {req.status === "backout" && (
+                                                                    <span className="block text-[10px] text-gray-400 mt-1">
+                                                                        Challenger has backed out from
+                                                                        this challenge.
+                                                                    </span>
+                                                                )}
+                                                                {req.status === "cancelled" && (
+                                                                    <span className="block text-[10px] text-red-400 mt-1">
+                                                                        Booking has been cancelled.
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             {req.status === "pending" && (
                                                                 <div className="flex gap-2">
@@ -2140,11 +2692,6 @@
                                                                 </div>
                                                             )}
                                                         </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
                                 </div>
                             )}
 
@@ -2164,7 +2711,7 @@
 
                                     <div className="retro-table-container flex-1">
                                         <table className="retro-table">
-                                            <thead>
+                                                                                        <thead>
                                                 <tr>
                                                     <th className="id-col">#</th>
                                                     <th>
@@ -2239,7 +2786,7 @@
                                                                 className="header-title"
                                                                 onClick={() => handleSort("time")}
                                                             >
-                                                                TIME{" "}
+                                                                TIME WINDOW{" "}
                                                                 {sortColumn === "time" && (
                                                                     <span className="sort-arrow">
                                                                         {sortOrder === "asc"
@@ -2339,7 +2886,7 @@
                                                                 type="text"
                                                                 placeholder="Filter..."
                                                                 className="col-filter-input"
-                                                              	 onClick={(e) => e.stopPropagation()}
+                                                                onClick={(e) => e.stopPropagation()}
                                                                 onChange={(e) =>
                                                                     handleFilterChange(
                                                                         "phone",
@@ -2422,6 +2969,45 @@
                                                             <div
                                                                 className="header-title"
                                                                 onClick={() =>
+                                                                    handleSort("status")
+                                                                }
+                                                            >
+                                                                STATUS{" "}
+                                                                {sortColumn === "status" && (
+                                                                    <span className="sort-arrow">
+                                                                        {sortOrder === "asc"
+                                                                            ? "↑"
+                                                                            : "↓"}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <select
+                                                                className="col-filter-select"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                onChange={(e) =>
+                                                                    handleFilterChange(
+                                                                        "status",
+                                                                        e.target.value
+                                                                    )
+                                                                }
+                                                            >
+                                                                <option value="">All</option>
+                                                                <option value="active">Active</option>
+                                                                <option value="cancelled">
+                                                                    Cancelled
+                                                                </option>
+                                                                <option value="completed">
+                                                                    Completed
+                                                                </option>
+                                                                <option value="other">Other</option>
+                                                            </select>
+                                                        </div>
+                                                    </th>
+                                                    <th>
+                                                        <div className="header-content">
+                                                            <div
+                                                                className="header-title"
+                                                                onClick={() =>
                                                                     handleSort("bookedAt")
                                                                 }
                                                             >
@@ -2457,7 +3043,8 @@
                                                     </th>
                                                 </tr>
                                             </thead>
-                                            <tbody>
+
+                                                                                        <tbody>
                                                 {filteredBookings.map((b, index) => {
                                                     let bookedAtStr = "";
                                                     if (
@@ -2473,6 +3060,14 @@
                                                             }
                                                         )}`;
                                                     }
+
+                                                    const statusLabel = (b.status || "active").toUpperCase();
+                                                    const timeLabel =
+                                                        b.time ||
+                                                        (b.startTime && b.endTime
+                                                            ? `${b.startTime} - ${b.endTime}`
+                                                            : "Time TBD");
+
                                                     return (
                                                         <tr key={b.id}>
                                                             <td className="row-id">
@@ -2480,7 +3075,7 @@
                                                             </td>
                                                             <td>{b.venueName}</td>
                                                             <td>{b.date}</td>
-                                                            <td>{b.time}</td>
+                                                            <td>{timeLabel}</td>
                                                             <td>{b.user}</td>
                                                             <td>{b.email}</td>
                                                             <td>{b.phone || "-"}</td>
@@ -2490,6 +3085,7 @@
                                                                     ? "OPEN"
                                                                     : "NORMAL"}
                                                             </td>
+                                                            <td>{statusLabel}</td>
                                                             <td>{bookedAtStr || "-"}</td>
                                                             <td>
                                                                 <div className="flex gap-2">
@@ -2518,7 +3114,7 @@
                                 </div>
                             )}
 
-                            {view === "heatmap" && (
+                                                                                    {view === "heatmap" && (
                                 <div className="w-full h-full bg-[#020617]/95 border-4 border-white p-6 overflow-x-auto backdrop-blur-sm relative flex flex-col rounded-xl shadow-2xl">
                                     <div className="flex justify-between items-center mb-6 border-b-4 border-white pb-4">
                                         <h2 className="text-3xl text-red-400 retro-font">
@@ -2541,11 +3137,12 @@
                                     ) : (
                                         <>
                                             <p className="text-xs text-gray-300 mb-4">
-                                                Showing bookings for{" "}
+                                                Showing active bookings for{" "}
                                                 <span className="text-yellow-300 font-mono">
                                                     {todayStr}
                                                 </span>
-                                                . Each glowing block represents a booked slot.
+                                                . Each glowing block represents a time window
+                                                where a booking overlaps that hour.
                                             </p>
                                             <div className="inline-block rounded-lg border border-white/20 bg-black/40 p-3">
                                                 <div
@@ -2576,11 +3173,45 @@
                                                                 {v.name}
                                                             </div>
                                                             {TIME_SLOTS.map((slot) => {
-                                                                const booked = todaysBookings.find(
-                                                                    (b) =>
-                                                                        b.venueId === v.id &&
-                                                                        b.time.startsWith(slot)
+                                                                // define the slot as [slot, slot+1h) interval
+                                                                const [sh, sm] = slot
+                                                                    .split(":")
+                                                                    .map(Number);
+                                                                const slotStart = new Date(
+                                                                    todayStr + "T" + slot + ":00"
                                                                 );
+                                                                const slotEnd = new Date(
+                                                                    todayStr +
+                                                                        "T" +
+                                                                        String(
+                                                                            (sh + 1)
+                                                                                .toString()
+                                                                                .padStart(2, "0")
+                                                                        ) +
+                                                                        ":" +
+                                                                        String(sm)
+                                                                            .toString()
+                                                                            .padStart(2, "0") +
+                                                                        ":00"
+                                                                );
+
+                                                                const booked = todaysBookings.find(
+                                                                    (b) => {
+                                                                        if (b.venueId !== v.id)
+                                                                            return false;
+                                                                        const interval =
+                                                                            getBookingInterval(b);
+                                                                        if (!interval) return false;
+                                                                        return intervalsOverlap(
+                                                                            interval,
+                                                                            {
+                                                                                start: slotStart,
+                                                                                end: slotEnd
+                                                                            }
+                                                                        );
+                                                                    }
+                                                                );
+
                                                                 return (
                                                                     <div
                                                                         key={slot}
@@ -2602,6 +3233,8 @@
                                     )}
                                 </div>
                             )}
+
+
 
                             {selectedVenue && (
                                 <BookingModal
@@ -2649,4 +3282,3 @@
     </script>
 </body>
 </html>
-
