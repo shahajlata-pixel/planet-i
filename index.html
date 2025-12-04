@@ -2140,7 +2140,12 @@ const maxMinutes = isSports ? 120 : 180;
                 WeatherIcon = CloudIcon;
             }
 
-            const todayStr = time.toISOString().split("T")[0];
+            // Local (IST) date string for heatmap, not UTC
+const todayStr = [
+    time.getFullYear(),
+    String(time.getMonth() + 1).padStart(2, "0"),
+    String(time.getDate()).padStart(2, "0")
+].join("-");
 
             const dayDateString = time.toLocaleDateString("en-IN", {
                 weekday: "short",
